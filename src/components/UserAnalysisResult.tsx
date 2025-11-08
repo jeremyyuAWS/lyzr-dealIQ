@@ -4,24 +4,13 @@ import { generateOpportunityAnalysis, OpportunityAnalysisData } from '../utils/a
 import { calculateCredits, calculateTimeline, getResponsibleAIFeatures, CreditEstimate, TimelineEstimate, ResponsibleAIFeatures } from '../utils/creditCalculator';
 import { Sparkles, Brain, Zap, Clock, Shield, CheckCircle, TrendingUp, AlertCircle, Users, Network, Calculator, Mail, Download, Send, DollarSign, Globe } from 'lucide-react';
 import CreditForecast from './CreditForecast';
+import { creditPricing, CURRENCIES, CurrencyCode } from '../lib/creditPricing';
 
 interface UserAnalysisResultProps {
   dealData: DealSubmission;
   emailRequested?: boolean;
   onClose: () => void;
 }
-
-const CURRENCIES = {
-  USD: { symbol: '$', rate: 1, label: 'USD' },
-  EUR: { symbol: '€', rate: 0.92, label: 'EUR' },
-  GBP: { symbol: '£', rate: 0.79, label: 'GBP' },
-  INR: { symbol: '₹', rate: 83.12, label: 'INR' },
-  AUD: { symbol: 'A$', rate: 1.53, label: 'AUD' },
-  CAD: { symbol: 'C$', rate: 1.36, label: 'CAD' },
-  JPY: { symbol: '¥', rate: 149.50, label: 'JPY' },
-};
-
-type CurrencyCode = keyof typeof CURRENCIES;
 
 export default function UserAnalysisResult({ dealData, emailRequested = false, onClose }: UserAnalysisResultProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(true);
@@ -34,21 +23,13 @@ export default function UserAnalysisResult({ dealData, emailRequested = false, o
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [currency, setCurrency] = useState<CurrencyCode>(() => {
-    const stored = localStorage.getItem('lyzr_currency');
-    return (stored as CurrencyCode) || 'USD';
-  });
-  const [creditRate, setCreditRate] = useState(() => {
-    const stored = localStorage.getItem('lyzr_credit_rate');
-    return stored ? parseFloat(stored) : 0.01;
-  });
+  const [currency, setCurrency] = useState<CurrencyCode>(() => creditPricing.getCurrency());
+  const [creditRate, setCreditRate] = useState(() => creditPricing.getRate());
 
   useEffect(() => {
     const handleStorageChange = () => {
-      const storedRate = localStorage.getItem('lyzr_credit_rate');
-      const storedCurrency = localStorage.getItem('lyzr_currency');
-      if (storedRate) setCreditRate(parseFloat(storedRate));
-      if (storedCurrency) setCurrency(storedCurrency as CurrencyCode);
+      setCreditRate(creditPricing.getRate());
+      setCurrency(creditPricing.getCurrency());
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -62,19 +43,17 @@ export default function UserAnalysisResult({ dealData, emailRequested = false, o
 
   const handleCurrencyChange = (newCurrency: CurrencyCode) => {
     setCurrency(newCurrency);
-    localStorage.setItem('lyzr_currency', newCurrency);
-  };
-
-  const convertToSelectedCurrency = (usdAmount: number) => {
-    return usdAmount * CURRENCIES[currency].rate;
+    creditPricing.setRate(creditRate, newCurrency);
   };
 
   const formatCurrency = (amount: number) => {
-    const converted = convertToSelectedCurrency(amount);
+    const currencyInfo = CURRENCIES.find(c => c.code === currency);
+    if (!currencyInfo) return `$${amount.toFixed(2)}`;
+
     if (currency === 'JPY') {
-      return `${CURRENCIES[currency].symbol}${Math.round(converted).toLocaleString()}`;
+      return `${currencyInfo.symbol}${Math.round(amount).toLocaleString()}`;
     }
-    return `${CURRENCIES[currency].symbol}${converted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `${currencyInfo.symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   useEffect(() => {
@@ -353,9 +332,9 @@ export default function UserAnalysisResult({ dealData, emailRequested = false, o
                 onChange={(e) => handleCurrencyChange(e.target.value as CurrencyCode)}
                 className="px-3 py-2 border-2 border-blue-300 rounded-lg bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
-                {Object.entries(CURRENCIES).map(([code, curr]) => (
-                  <option key={code} value={code}>
-                    {curr.symbol} {curr.label}
+                {CURRENCIES.map((curr) => (
+                  <option key={curr.code} value={curr.code}>
+                    {curr.symbol} {curr.code}
                   </option>
                 ))}
               </select>

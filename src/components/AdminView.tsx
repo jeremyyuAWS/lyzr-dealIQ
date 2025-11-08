@@ -134,9 +134,7 @@ export default function AdminView() {
   const [creditRate, setCreditRate] = useState(creditPricing.getRate());
   const [creditNotes, setCreditNotes] = useState(creditPricing.getPricing().notes || '');
   const [settingsSaved, setSettingsSaved] = useState(false);
-  const [currency, setCurrency] = useState(() => {
-    return (localStorage.getItem('lyzr_currency') as any) || 'USD';
-  });
+  const [currency, setCurrency] = useState<CurrencyCode>(creditPricing.getCurrency());
 
   useEffect(() => {
     fetchDeals();
@@ -179,8 +177,7 @@ export default function AdminView() {
   };
 
   const handleSaveSettings = () => {
-    creditPricing.setRate(creditRate, creditNotes);
-    localStorage.setItem('lyzr_currency', currency);
+    creditPricing.setRate(creditRate, currency, creditNotes);
     setSettingsSaved(true);
     setTimeout(() => setSettingsSaved(false), 3000);
   };
