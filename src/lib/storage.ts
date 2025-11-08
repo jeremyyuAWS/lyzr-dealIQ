@@ -1,6 +1,16 @@
 import { DealSubmission } from '../types';
+import { CurrencyCode } from './creditPricing';
 
 const DEALS_KEY = 'lyzr_deal_submissions';
+const DEAL_PRICING_KEY = 'lyzr_deal_pricing';
+
+export interface DealPricingConfig {
+  dealId: string;
+  creditRate: number;
+  currency: CurrencyCode;
+  accountNotes: string;
+  updatedAt: string;
+}
 
 export const storage = {
   async saveSubmission(deal: DealSubmission): Promise<DealSubmission> {
@@ -47,5 +57,39 @@ export const storage = {
 
     localStorage.setItem(DEALS_KEY, JSON.stringify(deals));
     return deals[index];
+  },
+
+  async saveDealPricing(config: DealPricingConfig): Promise<void> {
+    const allConfigs = await storage.getAllDealPricing();
+    const index = allConfigs.findIndex(c => c.dealId === config.dealId);
+
+    const updatedConfig = {
+      ...config,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (index >= 0) {
+      allConfigs[index] = updatedConfig;
+    } else {
+      allConfigs.push(updatedConfig);
+    }
+
+    localStorage.setItem(DEAL_PRICING_KEY, JSON.stringify(allConfigs));
+  },
+
+  async getDealPricing(dealId: string): Promise<DealPricingConfig | null> {
+    const allConfigs = await storage.getAllDealPricing();
+    return allConfigs.find(c => c.dealId === dealId) || null;
+  },
+
+  async getAllDealPricing(): Promise<DealPricingConfig[]> {
+    const stored = localStorage.getItem(DEAL_PRICING_KEY);
+    return stored ? JSON.parse(stored) : [];
+  },
+
+  async deleteDealPricing(dealId: string): Promise<void> {
+    const allConfigs = await storage.getAllDealPricing();
+    const filtered = allConfigs.filter(c => c.dealId !== dealId);
+    localStorage.setItem(DEAL_PRICING_KEY, JSON.stringify(filtered));
   }
 };

@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { DealSubmission } from '../types';
-import { storage } from '../lib/storage';
+import { storage, DealPricingConfig } from '../lib/storage';
 import OpportunityAnalysis from './OpportunityAnalysis';
 import CreditForecast from './CreditForecast';
 import { generateOpportunityAnalysis, OpportunityAnalysisData } from '../utils/analysisGenerator';
 import { creditPricing } from '../lib/creditPricing';
-import { ChevronRight, TrendingUp, Clock, Building, Mail, Calendar, Sparkles, X, Settings, DollarSign, Save, Globe } from 'lucide-react';
+import { ChevronRight, TrendingUp, Clock, Building, Mail, Calendar, Sparkles, X, Settings, DollarSign, Save, Globe, Edit } from 'lucide-react';
 import { CURRENCIES, CurrencyCode } from '../lib/creditPricing';
 import CreditPricingTable from './CreditPricingTable';
 
@@ -129,12 +129,17 @@ export default function AdminView() {
   const [analysis, setAnalysis] = useState<OpportunityAnalysisData | null>(null);
   const [generatingAnalysis, setGeneratingAnalysis] = useState(false);
   const showSyntheticData = true;
-  const [activeTab, setActiveTab] = useState<'analysis' | 'submission'>('analysis');
+  const [activeTab, setActiveTab] = useState<'analysis' | 'submission' | 'settings'>('analysis');
   const [showSettings, setShowSettings] = useState(false);
   const [creditRate, setCreditRate] = useState(creditPricing.getRate());
   const [creditNotes, setCreditNotes] = useState(creditPricing.getPricing().notes || '');
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [currency, setCurrency] = useState<CurrencyCode>(creditPricing.getCurrency());
+  const [dealPricingConfig, setDealPricingConfig] = useState<DealPricingConfig | null>(null);
+  const [dealCreditRate, setDealCreditRate] = useState(creditPricing.getRate());
+  const [dealCurrency, setDealCurrency] = useState<CurrencyCode>(creditPricing.getCurrency());
+  const [dealAccountNotes, setDealAccountNotes] = useState('');
+  const [dealSettingsSaved, setDealSettingsSaved] = useState(false);
 
   useEffect(() => {
     fetchDeals();
@@ -159,6 +164,19 @@ export default function AdminView() {
     setSelectedDeal(deal);
     setGeneratingAnalysis(true);
 
+    const pricingConfig = await storage.getDealPricing(deal.id || '');
+    if (pricingConfig) {
+      setDealPricingConfig(pricingConfig);
+      setDealCreditRate(pricingConfig.creditRate);
+      setDealCurrency(pricingConfig.currency);
+      setDealAccountNotes(pricingConfig.accountNotes);
+    } else {
+      setDealPricingConfig(null);
+      setDealCreditRate(creditPricing.getRate());
+      setDealCurrency(creditPricing.getCurrency());
+      setDealAccountNotes('');
+    }
+
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     const analysisData = generateOpportunityAnalysis(deal);
@@ -169,6 +187,25 @@ export default function AdminView() {
   const handleCloseDeal = () => {
     setSelectedDeal(null);
     setAnalysis(null);
+    setDealPricingConfig(null);
+    setDealSettingsSaved(false);
+  };
+
+  const handleSaveDealSettings = async () => {
+    if (!selectedDeal?.id) return;
+
+    const config: DealPricingConfig = {
+      dealId: selectedDeal.id,
+      creditRate: dealCreditRate,
+      currency: dealCurrency,
+      accountNotes: dealAccountNotes,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await storage.saveDealPricing(config);
+    setDealPricingConfig(config);
+    setDealSettingsSaved(true);
+    setTimeout(() => setDealSettingsSaved(false), 3000);
   };
 
   const handleSaveSettings = () => {
@@ -251,6 +288,17 @@ export default function AdminView() {
               >
                 Form Submission
               </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                  activeTab === 'settings'
+                    ? 'bg-black text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                }`}
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </button>
             </div>
           </div>
         </div>
@@ -315,6 +363,7 @@ export default function AdminView() {
                       estimatedAgents={analysis.estimated_agents}
                       complexityLevel={analysis.complexity_level}
                       dealData={selectedDeal}
+                      customPricing={dealPricingConfig}
                     />
                   </div>
                 </div>
@@ -500,6 +549,221 @@ export default function AdminView() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 border-2 border-blue-300 rounded-2xl p-8 shadow-xl">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-3 shadow-lg">
+                    <DollarSign className="h-8 w-8 stroke-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-black mb-1">Customer-Specific Pricing Configuration</h3>
+                    <p className="text-sm text-gray-600">Customize credit rates and pricing for {selectedDeal.company}</p>
+                    {dealPricingConfig && (
+                      <p className="text-xs text-green-600 font-medium mt-1">
+                        ✓ Custom pricing configured • Last updated: {new Date(dealPricingConfig.updatedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div className="bg-white rounded-xl p-5 border-2 border-blue-200 shadow-md">
+                    <label className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                      <Globe className="h-5 w-5 stroke-blue-600" />
+                      Currency Selection
+                    </label>
+                    <select
+                      value={dealCurrency}
+                      onChange={(e) => setDealCurrency(e.target.value as CurrencyCode)}
+                      className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-bold cursor-pointer bg-blue-50"
+                    >
+                      {CURRENCIES.map((curr) => (
+                        <option key={curr.code} value={curr.code}>
+                          {curr.symbol} {curr.code} - {curr.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="mt-3 bg-blue-100 rounded-lg p-3">
+                      <p className="text-xs text-blue-800"><strong>Selected:</strong> All cost displays will use <span className="font-bold">{CURRENCIES.find(c => c.code === dealCurrency)?.symbol} {dealCurrency}</span></p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl p-5 border-2 border-purple-200 shadow-md">
+                    <label className="text-sm font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 stroke-purple-600" />
+                      Rate per Credit
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-700 font-bold text-lg">
+                        {CURRENCIES.find(c => c.code === dealCurrency)?.symbol}
+                      </span>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        min="0"
+                        value={dealCreditRate}
+                        onChange={(e) => setDealCreditRate(parseFloat(e.target.value) || 0)}
+                        className="w-full pl-10 pr-4 py-3 border-2 border-purple-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg font-bold bg-purple-50"
+                        placeholder="0.01"
+                      />
+                    </div>
+                    <div className="mt-3 bg-purple-100 rounded-lg p-3">
+                      <p className="text-xs text-purple-800 font-semibold mb-2">Quick Set:</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          onClick={() => setDealCreditRate(0.015)}
+                          className="px-2 py-1.5 bg-white hover:bg-purple-200 rounded text-xs font-medium border-2 border-purple-300 transition-colors"
+                        >
+                          0.015
+                        </button>
+                        <button
+                          onClick={() => setDealCreditRate(0.01)}
+                          className="px-2 py-1.5 bg-white hover:bg-purple-200 rounded text-xs font-medium border-2 border-purple-300 transition-colors"
+                        >
+                          0.010
+                        </button>
+                        <button
+                          onClick={() => setDealCreditRate(0.007)}
+                          className="px-2 py-1.5 bg-white hover:bg-purple-200 rounded text-xs font-medium border-2 border-purple-300 transition-colors"
+                        >
+                          0.007
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-300 shadow-md">
+                    <label className="text-sm font-semibold text-green-900 mb-3 block">
+                      💰 Live Cost Preview
+                    </label>
+                    <div className="space-y-3">
+                      <div className="bg-white rounded-lg p-3 border border-green-200">
+                        <p className="text-xs text-green-700 mb-1">100 credits</p>
+                        <p className="text-2xl font-bold text-green-900">
+                          {CURRENCIES.find(c => c.code === dealCurrency)?.symbol}{(100 * dealCreditRate).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border border-green-200">
+                        <p className="text-xs text-green-700 mb-1">1,000 credits</p>
+                        <p className="text-2xl font-bold text-green-900">
+                          {CURRENCIES.find(c => c.code === dealCurrency)?.symbol}{(1000 * dealCreditRate).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border border-green-200">
+                        <p className="text-xs text-green-700 mb-1">10,000 credits</p>
+                        <p className="text-2xl font-bold text-green-900">
+                          {CURRENCIES.find(c => c.code === dealCurrency)?.symbol}{(10000 * dealCreditRate).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-5 mb-6 border-2 border-gray-200">
+                  <label className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <Edit className="h-5 w-5 stroke-gray-700" />
+                    Account Notes
+                  </label>
+                  <textarea
+                    value={dealAccountNotes}
+                    onChange={(e) => setDealAccountNotes(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white"
+                    rows={4}
+                    placeholder="e.g., Enterprise tier customer, annual contract discount applied, special volume pricing..."
+                  />
+                  <p className="text-xs text-gray-600 mt-2">
+                    Document special pricing agreements, discounts, contract terms, or customer-specific notes
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-6 border-t-2 border-gray-300">
+                  <div className="bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3">
+                    <p className="text-sm text-blue-900">
+                      <strong>💡 Note:</strong> These settings apply only to <strong>{selectedDeal.company}</strong>
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleSaveDealSettings}
+                    disabled={dealSettingsSaved}
+                    className={`flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-lg ${
+                      dealSettingsSaved
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
+                        : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transform hover:scale-105'
+                    }`}
+                  >
+                    {dealSettingsSaved ? (
+                      <>
+                        <Save className="h-5 w-5" />
+                        Saved Successfully!
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-5 w-5" />
+                        Save Settings
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <h3 className="text-lg font-bold text-black mb-4">How Customer-Specific Pricing Works</h3>
+                <div className="space-y-4 text-sm text-gray-700">
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">1</div>
+                    <div>
+                      <p className="font-semibold text-black mb-1">Set Custom Rates</p>
+                      <p>Configure a specific $ per credit rate for this customer based on contract terms, volume discounts, or enterprise agreements.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">2</div>
+                    <div>
+                      <p className="font-semibold text-black mb-1">Currency Flexibility</p>
+                      <p>Choose the customer's preferred currency for quotes and invoicing. All cost calculations will automatically convert.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">3</div>
+                    <div>
+                      <p className="font-semibold text-black mb-1">Automatic Application</p>
+                      <p>Once saved, all cost estimates for this deal will use the custom pricing instead of default rates.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">4</div>
+                    <div>
+                      <p className="font-semibold text-black mb-1">Document Everything</p>
+                      <p>Use Account Notes to record the reasoning behind pricing decisions for future reference and audit trails.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-6">
+                <h3 className="text-lg font-bold text-amber-900 mb-4">Pricing Examples</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white rounded-xl p-4 border border-amber-200">
+                    <p className="font-semibold text-amber-900 mb-2">Standard Rate</p>
+                    <p className="text-2xl font-bold text-amber-900 mb-1">$0.010</p>
+                    <p className="text-xs text-amber-700">Default pricing for most customers</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 border border-amber-200">
+                    <p className="font-semibold text-amber-900 mb-2">Volume Discount</p>
+                    <p className="text-2xl font-bold text-amber-900 mb-1">$0.007</p>
+                    <p className="text-xs text-amber-700">30% discount for high-volume contracts</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 border border-amber-200">
+                    <p className="font-semibold text-amber-900 mb-2">Enterprise Rate</p>
+                    <p className="text-2xl font-bold text-amber-900 mb-1">$0.005</p>
+                    <p className="text-xs text-amber-700">50% discount for strategic accounts</p>
+                  </div>
+                </div>
               </div>
             </div>
           )}

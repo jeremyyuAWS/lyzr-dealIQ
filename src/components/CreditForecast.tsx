@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Calculator, TrendingUp, Calendar, Info, Sliders, PieChart, Zap } from 'lucide-react';
 import { DealSubmission } from '../types';
-import { creditPricing } from '../lib/creditPricing';
+import { creditPricing, CurrencyCode } from '../lib/creditPricing';
+import { DealPricingConfig } from '../lib/storage';
 
 interface CreditForecastProps {
   estimatedAgents: number;
   complexityLevel: string;
   dealData: DealSubmission;
+  customPricing?: DealPricingConfig | null;
 }
 
 const USE_CASE_METRICS = {
@@ -47,7 +49,9 @@ function detectUseCase(dealData: DealSubmission): UseCaseType {
   return 'Generic';
 }
 
-export default function CreditForecast({ estimatedAgents, complexityLevel, dealData }: CreditForecastProps) {
+export default function CreditForecast({ estimatedAgents, complexityLevel, dealData, customPricing }: CreditForecastProps) {
+  const creditCost = customPricing ? customPricing.creditRate : creditPricing.getRate();
+  const currency = customPricing ? customPricing.currency : creditPricing.getCurrency();
   const detectedUseCase = detectUseCase(dealData);
   const useCaseConfig = USE_CASE_METRICS[detectedUseCase];
 
@@ -85,7 +89,6 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
   const monthlyCredits = dailyCredits * workingDaysPerMonth;
   const annualCredits = monthlyCredits * 12;
 
-  const creditCost = creditPricing.getRate();
   const dailyCost = dailyCredits * creditCost;
   const monthlyCost = monthlyCredits * creditCost;
   const annualCost = annualCredits * creditCost;
@@ -113,9 +116,21 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Calculator className="h-6 w-6 stroke-black" />
-          <h3 className="text-xl font-bold text-black">Credit Usage & Cost Forecast</h3>
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <Calculator className="h-6 w-6 stroke-black" />
+            <h3 className="text-xl font-bold text-black">Credit Usage & Cost Forecast</h3>
+          </div>
+          {customPricing && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg font-bold">
+                Custom Pricing Active
+              </span>
+              <span className="text-gray-600">
+                @ {creditCost.toFixed(4)} per credit
+              </span>
+            </div>
+          )}
         </div>
         <button
           onClick={() => setShowBreakdown(!showBreakdown)}
