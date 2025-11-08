@@ -128,7 +128,7 @@ export default function AdminView() {
   const [selectedDeal, setSelectedDeal] = useState<DealSubmission | null>(null);
   const [analysis, setAnalysis] = useState<OpportunityAnalysisData | null>(null);
   const [generatingAnalysis, setGeneratingAnalysis] = useState(false);
-  const [showSyntheticData, setShowSyntheticData] = useState(true);
+  const showSyntheticData = true;
   const [activeTab, setActiveTab] = useState<'analysis' | 'submission'>('analysis');
   const [showSettings, setShowSettings] = useState(false);
   const [creditRate, setCreditRate] = useState(creditPricing.getRate());
@@ -144,21 +144,16 @@ export default function AdminView() {
     try {
       setLoading(true);
       const realDeals = await storage.getAllSubmissions();
-      const allDeals = showSyntheticData ? [...SYNTHETIC_DEALS, ...realDeals] : realDeals;
+      const allDeals = [...SYNTHETIC_DEALS, ...realDeals];
       setDeals(allDeals);
     } catch (error) {
       console.error('Error fetching deals:', error);
-      if (showSyntheticData) {
-        setDeals(SYNTHETIC_DEALS);
-      }
+      setDeals(SYNTHETIC_DEALS);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchDeals();
-  }, [showSyntheticData]);
 
   const handleAnalyzeDeal = async (deal: DealSubmission) => {
     setSelectedDeal(deal);
@@ -521,25 +516,13 @@ export default function AdminView() {
             <h2 className="text-3xl font-bold text-black mb-2">Deal Pipeline</h2>
             <p className="text-gray-600">Review and analyze submitted opportunities</p>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-gray-300 bg-white text-black hover:border-gray-400 font-medium text-sm transition-all"
-            >
-              <Settings className="h-4 w-4" />
-              Settings
-            </button>
-            <button
-              onClick={() => setShowSyntheticData(!showSyntheticData)}
-              className={`px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all ${
-                showSyntheticData
-                  ? 'border-black bg-black text-white'
-                  : 'border-gray-300 bg-white text-black hover:border-gray-400'
-              }`}
-            >
-              {showSyntheticData ? 'Hide' : 'Show'} Demo Data
-            </button>
-          </div>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-gray-300 bg-white text-black hover:border-gray-400 font-medium text-sm transition-all"
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </button>
         </div>
 
         {showSettings && (
