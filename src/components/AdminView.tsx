@@ -5,7 +5,7 @@ import OpportunityAnalysis from './OpportunityAnalysis';
 import CreditForecast from './CreditForecast';
 import { generateOpportunityAnalysis, OpportunityAnalysisData } from '../utils/analysisGenerator';
 import { creditPricing } from '../lib/creditPricing';
-import { ChevronRight, TrendingUp, Clock, Building, Mail, Calendar, Sparkles, X, Settings, DollarSign, Save } from 'lucide-react';
+import { ChevronRight, TrendingUp, Clock, Building, Mail, Calendar, Sparkles, X, Settings, DollarSign, Save, Globe } from 'lucide-react';
 
 const SYNTHETIC_DEALS: DealSubmission[] = [
   {
@@ -132,6 +132,9 @@ export default function AdminView() {
   const [creditRate, setCreditRate] = useState(creditPricing.getRate());
   const [creditNotes, setCreditNotes] = useState(creditPricing.getPricing().notes || '');
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [currency, setCurrency] = useState(() => {
+    return (localStorage.getItem('lyzr_currency') as any) || 'USD';
+  });
 
   useEffect(() => {
     fetchDeals();
@@ -175,6 +178,7 @@ export default function AdminView() {
 
   const handleSaveSettings = () => {
     creditPricing.setRate(creditRate, creditNotes);
+    localStorage.setItem('lyzr_currency', currency);
     setSettingsSaved(true);
     setTimeout(() => setSettingsSaved(false), 3000);
   };
@@ -545,8 +549,8 @@ export default function AdminView() {
               <div className="flex items-center gap-3">
                 <DollarSign className="h-6 w-6 stroke-blue-700" />
                 <div>
-                  <h3 className="text-xl font-bold text-black">Credit Pricing Configuration</h3>
-                  <p className="text-sm text-gray-600">Set custom credit rates for this account</p>
+                  <h3 className="text-xl font-bold text-black">Credit Pricing & Currency Configuration</h3>
+                  <p className="text-sm text-gray-600">Set custom credit rates and default currency for this account</p>
                 </div>
               </div>
               <button
@@ -557,7 +561,7 @@ export default function AdminView() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="text-sm font-semibold text-gray-700 mb-2 block">
                   Credit Rate (USD per credit)
@@ -600,20 +604,43 @@ export default function AdminView() {
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                  Account Notes
+                <label className="text-sm font-semibold text-gray-700 mb-2 block flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Default Currency
                 </label>
-                <textarea
-                  value={creditNotes}
-                  onChange={(e) => setCreditNotes(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  rows={4}
-                  placeholder="e.g., Enterprise tier customer, annual contract discount applied..."
-                />
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-bold cursor-pointer"
+                >
+                  <option value="USD">$ USD - US Dollar</option>
+                  <option value="EUR">€ EUR - Euro</option>
+                  <option value="GBP">£ GBP - British Pound</option>
+                  <option value="INR">₹ INR - Indian Rupee</option>
+                  <option value="AUD">A$ AUD - Australian Dollar</option>
+                  <option value="CAD">C$ CAD - Canadian Dollar</option>
+                  <option value="JPY">¥ JPY - Japanese Yen</option>
+                </select>
+                <div className="mt-3 bg-green-50 rounded-lg p-3">
+                  <p className="text-xs text-green-800"><strong>Note:</strong> Currency can be changed per-analysis in the results view. This setting only affects the default selection.</p>
+                </div>
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-between pt-6 border-t border-gray-200">
+            <div className="bg-gray-50 rounded-xl p-4 mb-6">
+              <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                Account Notes
+              </label>
+              <textarea
+                value={creditNotes}
+                onChange={(e) => setCreditNotes(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                rows={3}
+                placeholder="e.g., Enterprise tier customer, annual contract discount applied..."
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-6 border-t border-gray-200">
               <div className="text-sm text-gray-600">
                 <p><strong>Example:</strong> 1,000 credits at ${creditRate.toFixed(3)}/credit = <span className="font-bold text-black">${(1000 * creditRate).toFixed(2)}</span></p>
               </div>

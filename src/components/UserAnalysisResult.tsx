@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { DealSubmission } from '../types';
 import { generateOpportunityAnalysis, OpportunityAnalysisData } from '../utils/analysisGenerator';
 import { calculateCredits, calculateTimeline, getResponsibleAIFeatures, CreditEstimate, TimelineEstimate, ResponsibleAIFeatures } from '../utils/creditCalculator';
-import { Sparkles, Brain, Zap, Clock, Shield, CheckCircle, TrendingUp, AlertCircle, Users, Network, Calculator, Mail, Download, Send } from 'lucide-react';
+import { Sparkles, Brain, Zap, Clock, Shield, CheckCircle, TrendingUp, AlertCircle, Users, Network, Calculator, Mail, Download, Send, DollarSign, Globe } from 'lucide-react';
 import CreditForecast from './CreditForecast';
 
 interface UserAnalysisResultProps {
@@ -10,6 +10,18 @@ interface UserAnalysisResultProps {
   emailRequested?: boolean;
   onClose: () => void;
 }
+
+const CURRENCIES = {
+  USD: { symbol: '$', rate: 1, label: 'USD' },
+  EUR: { symbol: '€', rate: 0.92, label: 'EUR' },
+  GBP: { symbol: '£', rate: 0.79, label: 'GBP' },
+  INR: { symbol: '₹', rate: 83.12, label: 'INR' },
+  AUD: { symbol: 'A$', rate: 1.53, label: 'AUD' },
+  CAD: { symbol: 'C$', rate: 1.36, label: 'CAD' },
+  JPY: { symbol: '¥', rate: 149.50, label: 'JPY' },
+};
+
+type CurrencyCode = keyof typeof CURRENCIES;
 
 export default function UserAnalysisResult({ dealData, emailRequested = false, onClose }: UserAnalysisResultProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(true);
@@ -22,6 +34,48 @@ export default function UserAnalysisResult({ dealData, emailRequested = false, o
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [currency, setCurrency] = useState<CurrencyCode>(() => {
+    const stored = localStorage.getItem('lyzr_currency');
+    return (stored as CurrencyCode) || 'USD';
+  });
+  const [creditRate, setCreditRate] = useState(() => {
+    const stored = localStorage.getItem('lyzr_credit_rate');
+    return stored ? parseFloat(stored) : 0.01;
+  });
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedRate = localStorage.getItem('lyzr_credit_rate');
+      const storedCurrency = localStorage.getItem('lyzr_currency');
+      if (storedRate) setCreditRate(parseFloat(storedRate));
+      if (storedCurrency) setCurrency(storedCurrency as CurrencyCode);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(handleStorageChange, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleCurrencyChange = (newCurrency: CurrencyCode) => {
+    setCurrency(newCurrency);
+    localStorage.setItem('lyzr_currency', newCurrency);
+  };
+
+  const convertToSelectedCurrency = (usdAmount: number) => {
+    return usdAmount * CURRENCIES[currency].rate;
+  };
+
+  const formatCurrency = (amount: number) => {
+    const converted = convertToSelectedCurrency(amount);
+    if (currency === 'JPY') {
+      return `${CURRENCIES[currency].symbol}${Math.round(converted).toLocaleString()}`;
+    }
+    return `${CURRENCIES[currency].symbol}${converted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   useEffect(() => {
     performAnalysis();
@@ -287,31 +341,73 @@ export default function UserAnalysisResult({ dealData, emailRequested = false, o
         </div>
 
         <div className="bg-gradient-to-br from-blue-50 to-white border border-blue-200 rounded-2xl p-6 shadow-sm mb-8">
-          <div className="flex items-center gap-3 mb-6">
-            <Zap className="h-6 w-6 stroke-blue-600" />
-            <h3 className="text-xl font-bold text-black">Credit Consumption Estimate</h3>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Zap className="h-6 w-6 stroke-blue-600" />
+              <h3 className="text-xl font-bold text-black">Credit Consumption Estimate</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 stroke-gray-600" />
+              <select
+                value={currency}
+                onChange={(e) => handleCurrencyChange(e.target.value as CurrencyCode)}
+                className="px-3 py-2 border-2 border-blue-300 rounded-lg bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              >
+                {Object.entries(CURRENCIES).map(([code, curr]) => (
+                  <option key={code} value={code}>
+                    {curr.symbol} {curr.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 border border-blue-200 mb-6">
-            <div className="flex items-baseline gap-2 mb-2">
-              <p className="text-4xl font-bold text-black">{credits.total_credits.toLocaleString()}</p>
-              <p className="text-lg text-gray-600">credits</p>
+          <div className="bg-white rounded-xl p-6 border-2 border-blue-300 mb-6 shadow-md">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">Total Credits</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-5xl font-bold text-black">{credits.total_credits.toLocaleString()}</p>
+                  <p className="text-lg text-gray-600">credits</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 mb-2">Estimated Cost</p>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-8 w-8 stroke-green-600" />
+                    <p className="text-5xl font-bold text-green-700">
+                      {formatCurrency(credits.total_credits * creditRate)}
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">@ {formatCurrency(creditRate)}/credit</p>
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-gray-600">Total estimated for prototype, pilot, and 3 months production</p>
+            <p className="text-sm text-gray-600 mt-4 pt-4 border-t border-gray-200">Total estimated for prototype, pilot, and 3 months production</p>
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-              <span className="text-sm font-medium text-gray-700">Prototype Phase</span>
-              <span className="text-sm font-bold text-black">{credits.breakdown.prototype_phase.toLocaleString()} credits</span>
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
+              <span className="text-sm font-semibold text-gray-700">Prototype Phase</span>
+              <div className="text-right">
+                <div className="text-sm font-bold text-black">{credits.breakdown.prototype_phase.toLocaleString()} credits</div>
+                <div className="text-lg font-bold text-green-700">{formatCurrency(credits.breakdown.prototype_phase * creditRate)}</div>
+              </div>
             </div>
-            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-              <span className="text-sm font-medium text-gray-700">Pilot Phase</span>
-              <span className="text-sm font-bold text-black">{credits.breakdown.pilot_phase.toLocaleString()} credits</span>
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
+              <span className="text-sm font-semibold text-gray-700">Pilot Phase</span>
+              <div className="text-right">
+                <div className="text-sm font-bold text-black">{credits.breakdown.pilot_phase.toLocaleString()} credits</div>
+                <div className="text-lg font-bold text-green-700">{formatCurrency(credits.breakdown.pilot_phase * creditRate)}</div>
+              </div>
             </div>
-            <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-              <span className="text-sm font-medium text-gray-700">Production (per month)</span>
-              <span className="text-sm font-bold text-black">{credits.breakdown.production_monthly.toLocaleString()} credits</span>
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-300 transition-colors">
+              <span className="text-sm font-semibold text-gray-700">Production (per month)</span>
+              <div className="text-right">
+                <div className="text-sm font-bold text-black">{credits.breakdown.production_monthly.toLocaleString()} credits</div>
+                <div className="text-lg font-bold text-green-700">{formatCurrency(credits.breakdown.production_monthly * creditRate)}</div>
+              </div>
             </div>
           </div>
 
