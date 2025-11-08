@@ -1,5 +1,5 @@
 import { useState, FormEvent, useEffect, useRef } from 'react';
-import { Upload, Link as LinkIcon, X, CheckCircle2, Sparkles, User, FileText, Settings, Briefcase, Paperclip, Save, Clock, Gauge } from 'lucide-react';
+import { Upload, Link as LinkIcon, X, CheckCircle2, Sparkles, User, FileText, Settings, Briefcase, Paperclip, Save, Clock, Gauge, Mail } from 'lucide-react';
 import { DealSubmission } from '../types';
 import { storage } from '../lib/storage';
 import { SCENARIOS, Scenario } from '../data/scenarios';
@@ -76,6 +76,7 @@ export default function EnhancedDealIntakeForm() {
   const [activeScenario, setActiveScenario] = useState<Scenario | null>(null);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [shouldFillStep, setShouldFillStep] = useState(false);
+  const [emailReportToMe, setEmailReportToMe] = useState(true);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
@@ -384,6 +385,7 @@ export default function EnhancedDealIntakeForm() {
     return (
       <UserAnalysisResult
         dealData={submittedDeal}
+        emailRequested={emailReportToMe}
         onClose={() => {
           setSubmittedDeal(null);
         }}
@@ -883,6 +885,28 @@ export default function EnhancedDealIntakeForm() {
                 )}
               </div>
             </CollapsibleSection>
+          )}
+
+          {currentStep === FORM_STEPS.length - 1 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={emailReportToMe}
+                  onChange={(e) => setEmailReportToMe(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 rounded border-gray-300 text-black focus:ring-black focus:ring-offset-0 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 stroke-blue-700" />
+                    <span className="text-sm font-semibold text-blue-900">Email analysis report to me</span>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Receive a detailed PDF report of your AI-generated opportunity analysis at <span className="font-medium">{formData.requestor_email || 'your email'}</span>
+                  </p>
+                </div>
+              </label>
+            </div>
           )}
 
           <div className="flex justify-between items-center pt-6 border-t border-gray-200">

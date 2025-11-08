@@ -2,15 +2,16 @@ import { useState, useEffect } from 'react';
 import { DealSubmission } from '../types';
 import { generateOpportunityAnalysis, OpportunityAnalysisData } from '../utils/analysisGenerator';
 import { calculateCredits, calculateTimeline, getResponsibleAIFeatures, CreditEstimate, TimelineEstimate, ResponsibleAIFeatures } from '../utils/creditCalculator';
-import { Sparkles, Brain, Zap, Clock, Shield, CheckCircle, TrendingUp, AlertCircle, Users, Network, Calculator } from 'lucide-react';
+import { Sparkles, Brain, Zap, Clock, Shield, CheckCircle, TrendingUp, AlertCircle, Users, Network, Calculator, Mail } from 'lucide-react';
 import CreditForecast from './CreditForecast';
 
 interface UserAnalysisResultProps {
   dealData: DealSubmission;
+  emailRequested?: boolean;
   onClose: () => void;
 }
 
-export default function UserAnalysisResult({ dealData, onClose }: UserAnalysisResultProps) {
+export default function UserAnalysisResult({ dealData, emailRequested = false, onClose }: UserAnalysisResultProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [analysis, setAnalysis] = useState<OpportunityAnalysisData | null>(null);
   const [credits, setCredits] = useState<CreditEstimate | null>(null);
@@ -127,6 +128,27 @@ export default function UserAnalysisResult({ dealData, onClose }: UserAnalysisRe
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
+        {emailRequested && (
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-2xl p-5 mb-6 shadow-md">
+            <div className="flex items-start gap-4">
+              <div className="bg-blue-600 rounded-full p-2 mt-0.5">
+                <Mail className="h-5 w-5 stroke-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-blue-900 mb-2">Report Sent to Your Inbox</h3>
+                <p className="text-sm text-blue-800 mb-2">
+                  A detailed PDF analysis report has been emailed to <span className="font-semibold">{dealData.requestor_email}</span>
+                </p>
+                <div className="bg-white/60 rounded-lg p-3 mt-3">
+                  <p className="text-xs text-blue-700">
+                    <strong>What's included:</strong> Opportunity score, complexity analysis, agent architecture recommendations, timeline estimates, and detailed cost breakdown
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'overview' && (
           <>
         <div className="bg-white border-2 border-black rounded-2xl p-8 mb-8 shadow-lg">
