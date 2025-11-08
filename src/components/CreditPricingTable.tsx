@@ -65,10 +65,8 @@ export default function CreditPricingTable() {
   };
 
   const resetToDefaults = () => {
-    if (confirm('Reset all pricing to default values?')) {
-      setPricing(DEFAULT_CREDIT_PRICING);
-      saveCustomPricing(DEFAULT_CREDIT_PRICING);
-    }
+    setPricing(DEFAULT_CREDIT_PRICING);
+    saveCustomPricing(DEFAULT_CREDIT_PRICING);
   };
 
   return (
@@ -95,9 +93,6 @@ export default function CreditPricingTable() {
                 Category
               </th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                Key
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Price (C)
               </th>
               <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -113,9 +108,6 @@ export default function CreditPricingTable() {
               <tr key={item.key} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {item.category}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-                  {item.key}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   {editingKey === item.key ? (
