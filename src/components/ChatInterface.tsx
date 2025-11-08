@@ -2,6 +2,7 @@ import { useState, FormEvent, useRef, useEffect } from 'react';
 import { Send, Bot, User, Play, Square } from 'lucide-react';
 import { DealSubmission } from '../types';
 import { CHAT_SCENARIOS, ChatMessage } from '../data/chatScenarios';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   id: string;
@@ -265,7 +266,42 @@ export default function ChatInterface({ onDataUpdate }: ChatInterfaceProps = {})
                   : 'bg-gray-100 text-black'
               }`}
             >
-              <p className="text-sm leading-relaxed">{message.content}</p>
+              <div className="text-sm leading-relaxed prose prose-sm max-w-none">
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                    strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                    em: ({ children }) => <em className="italic">{children}</em>,
+                    ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                    li: ({ children }) => <li className="ml-2">{children}</li>,
+                    code: ({ children }) => (
+                      <code className={`px-1.5 py-0.5 rounded text-xs font-mono ${
+                        message.role === 'user' ? 'bg-gray-800' : 'bg-gray-200'
+                      }`}>
+                        {children}
+                      </code>
+                    ),
+                    h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-base font-bold mb-2">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-sm font-bold mb-1">{children}</h3>,
+                    a: ({ children, href }) => (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`underline hover:no-underline ${
+                          message.role === 'user' ? 'text-blue-300' : 'text-blue-600'
+                        }`}
+                      >
+                        {children}
+                      </a>
+                    ),
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+              </div>
             </div>
             {message.role === 'user' && (
               <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">

@@ -62,7 +62,7 @@ export const CHAT_SCENARIOS: ChatScenario[] = [
       },
       {
         role: 'user',
-        content: 'We want to cut dispute resolution time from 7-10 days to under 48 hours. Automate at least 70% of the routine validation work. Hit 95% accuracy on fraud detection. Make sure we have 100% compliance traceability for Canadian banking regulations. And boost our customer satisfaction scores by 35%.',
+        content: 'We want to achieve the following:\n\n- **Cut dispute resolution time** from 7-10 days to under 48 hours\n- **Automate 70%** of routine validation work\n- **Hit 95% accuracy** on fraud detection\n- **Ensure 100% compliance** traceability for Canadian banking regulations\n- **Boost customer satisfaction** scores by 35%',
         delay: 3000
       },
       {
@@ -117,7 +117,7 @@ export const CHAT_SCENARIOS: ChatScenario[] = [
       },
       {
         role: 'assistant',
-        content: "Perfect! Your deal has been submitted successfully. Our Solutions team will review it within 24 hours and reach out to you. Would you like to submit another deal?",
+        content: "Perfect! Your deal has been submitted successfully. 🎉\n\n**Next Steps:**\n\n1. Our Solutions team will review it within **24 hours**\n2. You'll receive a detailed opportunity analysis\n3. We'll reach out to schedule a technical deep-dive\n\nWould you like to submit another deal?",
         delay: 1000
       }
     ]
@@ -163,7 +163,7 @@ export const CHAT_SCENARIOS: ChatScenario[] = [
       },
       {
         role: 'user',
-        content: 'Our IT support teams are drowning in tickets because our knowledge base is always outdated. 60% of tickets get escalated because agents can\'t find good answers. Each complex ticket takes 45 minutes as agents search through multiple systems. We only find out about knowledge gaps after incidents happen, not before.',
+        content: 'Our IT support teams are facing significant challenges:\n\n- Knowledge base is **always outdated**\n- **60% of tickets get escalated** - agents can\'t find answers\n- Each complex ticket takes **45 minutes** searching multiple systems\n- Knowledge gaps discovered *reactively* after incidents',
         delay: 3200
       },
       {
