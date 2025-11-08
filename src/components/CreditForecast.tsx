@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calculator, TrendingUp, Calendar, Info } from 'lucide-react';
+import { Calculator, TrendingUp, Calendar, Info, Sliders, PieChart, Zap } from 'lucide-react';
 import { DealSubmission } from '../types';
 
 interface CreditForecastProps {
@@ -19,6 +19,7 @@ const USE_CASE_METRICS = {
 };
 
 type UseCaseType = keyof typeof USE_CASE_METRICS;
+type ScenarioType = 'optimized' | 'standard' | 'premium';
 
 function detectUseCase(dealData: DealSubmission): UseCaseType {
   const problemText = `${dealData.problem_statement} ${dealData.business_unit} ${dealData.company}`.toLowerCase();
@@ -52,6 +53,8 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
   const [volumePerDay, setVolumePerDay] = useState(useCaseConfig.defaultValue);
   const [workingDaysPerMonth, setWorkingDaysPerMonth] = useState(22);
   const [timeframe, setTimeframe] = useState<'6-month' | '12-month'>('6-month');
+  const [activeScenario, setActiveScenario] = useState<ScenarioType>('standard');
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   const getComplexityMultiplier = () => {
     switch (complexityLevel) {
@@ -63,11 +66,20 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
     }
   };
 
+  const getScenarioMultiplier = (scenario: ScenarioType) => {
+    switch (scenario) {
+      case 'optimized': return 0.75;
+      case 'standard': return 1.0;
+      case 'premium': return 1.3;
+    }
+  };
+
   const baseCreditsPerTransaction = useCaseConfig.creditsPerUnit;
   const complexityMultiplier = getComplexityMultiplier();
   const agentMultiplier = (1 + (estimatedAgents - 1) * 0.25);
+  const scenarioMultiplier = getScenarioMultiplier(activeScenario);
 
-  const creditsPerTransaction = Math.round(baseCreditsPerTransaction * complexityMultiplier * agentMultiplier);
+  const creditsPerTransaction = Math.round(baseCreditsPerTransaction * complexityMultiplier * agentMultiplier * scenarioMultiplier);
   const dailyCredits = creditsPerTransaction * volumePerDay;
   const monthlyCredits = dailyCredits * workingDaysPerMonth;
   const annualCredits = monthlyCredits * 12;
@@ -77,31 +89,43 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
   const monthlyCost = monthlyCredits * creditCost;
   const annualCost = annualCredits * creditCost;
 
-  // Generate forecast data for chart
   const numMonths = timeframe === '6-month' ? 6 : 12;
-  const historicalMonths = 2; // First 2 months are "historical"
+  const historicalMonths = 2;
 
   const chartData = Array.from({ length: numMonths }, (_, i) => ({
     month: i + 1,
-    cost: monthlyCost * (i < historicalMonths ? 1 : 1), // Could add variance here
+    cost: monthlyCost * (i < historicalMonths ? 1 : 1),
     isHistorical: i < historicalMonths,
     label: `M${i + 1}`
   }));
 
   const maxCost = Math.max(...chartData.map(d => d.cost)) * 1.15;
-  const minCost = 0;
   const chartHeight = 240;
-  const chartWidth = 100; // percentage
+
+  const costBreakdown = [
+    { category: 'Agent Execution', percentage: 45, color: '#3b82f6' },
+    { category: 'Data Processing', percentage: 25, color: '#10b981' },
+    { category: 'API Calls', percentage: 20, color: '#f59e0b' },
+    { category: 'Infrastructure', percentage: 10, color: '#8b5cf6' }
+  ];
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-      <div className="flex items-center gap-3 mb-6">
-        <Calculator className="h-6 w-6 stroke-black" />
-        <h3 className="text-xl font-bold text-black">Credit Usage & Cost Forecast</h3>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Calculator className="h-6 w-6 stroke-black" />
+          <h3 className="text-xl font-bold text-black">Credit Usage & Cost Forecast</h3>
+        </div>
+        <button
+          onClick={() => setShowBreakdown(!showBreakdown)}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium"
+        >
+          <PieChart className="h-4 w-4" />
+          {showBreakdown ? 'Hide' : 'Show'} Breakdown
+        </button>
       </div>
 
       <div className="space-y-6">
-        {/* Detected Use Case Banner */}
         <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -109,55 +133,141 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
               <p className="text-lg font-bold text-blue-900">{detectedUseCase}</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-blue-700 font-medium mb-1">Estimated Volume</p>
+              <p className="text-sm text-blue-700 font-medium mb-1">Base Volume</p>
               <p className="text-lg font-bold text-blue-900">{useCaseConfig.defaultValue} {useCaseConfig.label}/day</p>
             </div>
           </div>
         </div>
 
-        {/* Business Metrics Input */}
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+        <div className="bg-white border-2 border-gray-300 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Info className="h-4 w-4 stroke-gray-600" />
-            <h4 className="font-semibold text-black">Configure Your Usage</h4>
+            <Zap className="h-5 w-5 stroke-orange-600" />
+            <h4 className="font-bold text-black">Deployment Scenarios</h4>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">Compare different optimization levels to find the best fit for your needs</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button
+              onClick={() => setActiveScenario('optimized')}
+              className={`p-4 rounded-xl border-2 transition-all text-left ${
+                activeScenario === 'optimized'
+                  ? 'border-green-500 bg-green-50'
+                  : 'border-gray-200 hover:border-green-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-lg text-black">Optimized</span>
+                <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full">-25%</span>
+              </div>
+              <p className="text-xs text-gray-600 mb-2">Cost-efficient mode with caching and batching</p>
+              <p className="text-2xl font-bold text-green-700">
+                ${(monthlyCost * 0.75).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/mo
+              </p>
+            </button>
+
+            <button
+              onClick={() => setActiveScenario('standard')}
+              className={`p-4 rounded-xl border-2 transition-all text-left ${
+                activeScenario === 'standard'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-blue-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-lg text-black">Standard</span>
+                <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full">Recommended</span>
+              </div>
+              <p className="text-xs text-gray-600 mb-2">Balanced performance and cost</p>
+              <p className="text-2xl font-bold text-blue-700">
+                ${monthlyCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/mo
+              </p>
+            </button>
+
+            <button
+              onClick={() => setActiveScenario('premium')}
+              className={`p-4 rounded-xl border-2 transition-all text-left ${
+                activeScenario === 'premium'
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-gray-200 hover:border-purple-300'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-lg text-black">Premium</span>
+                <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded-full">+30%</span>
+              </div>
+              <p className="text-xs text-gray-600 mb-2">Maximum accuracy and features</p>
+              <p className="text-2xl font-bold text-purple-700">
+                ${(monthlyCost * 1.3).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/mo
+              </p>
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mt-4 bg-gray-50 rounded-lg p-3">
+            <p className="text-xs text-gray-700">
+              <strong>Scenario Details:</strong> {
+                activeScenario === 'optimized' ? 'Uses intelligent caching, request batching, and lightweight models for maximum efficiency.' :
+                activeScenario === 'premium' ? 'Includes advanced reasoning, real-time processing, multi-step validation, and priority support.' :
+                'Standard configuration with reliable performance, moderate caching, and full feature set.'
+              }
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Sliders className="h-4 w-4 stroke-gray-600" />
+            <h4 className="font-semibold text-black">Adjust Your Volume</h4>
+          </div>
+
+          <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                {useCaseConfig.label} per Day
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">
+                  {useCaseConfig.label} per Day
+                </label>
+                <span className="text-lg font-bold text-black">{volumePerDay}</span>
+              </div>
               <input
-                type="number"
+                type="range"
                 min="1"
-                max="10000"
+                max="500"
                 value={volumePerDay}
-                onChange={(e) => setVolumePerDay(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-lg font-semibold"
+                onChange={(e) => setVolumePerDay(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
               />
-              <p className="text-xs text-gray-500 mt-1">Expected daily volume</p>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1</span>
+                <span>250</span>
+                <span>500</span>
+              </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                Working Days per Month
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Working Days per Month
+                </label>
+                <span className="text-lg font-bold text-black">{workingDaysPerMonth}</span>
+              </div>
               <input
-                type="number"
+                type="range"
                 min="1"
                 max="31"
                 value={workingDaysPerMonth}
-                onChange={(e) => setWorkingDaysPerMonth(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent text-lg font-semibold"
+                onChange={(e) => setWorkingDaysPerMonth(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
               />
-              <p className="text-xs text-gray-500 mt-1">Business operating days</p>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1</span>
+                <span>15</span>
+                <span>31</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Credit Breakdown */}
         <div className="bg-white rounded-xl p-5 border-2 border-gray-200">
-          <h4 className="font-semibold text-black mb-4">Credit Consumption Breakdown</h4>
+          <h4 className="font-semibold text-black mb-4">Credit Consumption</h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-xs text-gray-600 mb-2">Per {useCaseConfig.unit.slice(0, -1)}</p>
@@ -182,7 +292,75 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
           </div>
         </div>
 
-        {/* Cost Estimates */}
+        {showBreakdown && (
+          <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <PieChart className="h-5 w-5 stroke-purple-700" />
+              <h4 className="font-bold text-purple-900">Cost Breakdown by Category</h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                {costBreakdown.map((item, idx) => (
+                  <div key={idx}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-700">{item.category}</span>
+                      <span className="text-sm font-bold" style={{ color: item.color }}>{item.percentage}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className="h-3 rounded-full transition-all duration-500"
+                        style={{ width: `${item.percentage}%`, backgroundColor: item.color }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      ${((monthlyCost * item.percentage) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-center">
+                <svg width="200" height="200" viewBox="0 0 200 200">
+                  {costBreakdown.reduce((acc, item, idx) => {
+                    const startAngle = acc.angle;
+                    const angle = (item.percentage / 100) * 360;
+                    const endAngle = startAngle + angle;
+
+                    const startRad = (startAngle - 90) * Math.PI / 180;
+                    const endRad = (endAngle - 90) * Math.PI / 180;
+
+                    const x1 = 100 + 80 * Math.cos(startRad);
+                    const y1 = 100 + 80 * Math.sin(startRad);
+                    const x2 = 100 + 80 * Math.cos(endRad);
+                    const y2 = 100 + 80 * Math.sin(endRad);
+
+                    const largeArc = angle > 180 ? 1 : 0;
+
+                    acc.paths.push(
+                      <path
+                        key={idx}
+                        d={`M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArc} 1 ${x2} ${y2} Z`}
+                        fill={item.color}
+                        stroke="white"
+                        strokeWidth="2"
+                      />
+                    );
+
+                    acc.angle = endAngle;
+                    return acc;
+                  }, { angle: 0, paths: [] as JSX.Element[] }).paths}
+                  <circle cx="100" cy="100" r="40" fill="white" />
+                  <text x="100" y="95" textAnchor="middle" className="text-xs font-bold" fill="#000">
+                    Total
+                  </text>
+                  <text x="100" y="110" textAnchor="middle" className="text-lg font-bold" fill="#000">
+                    ${monthlyCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </text>
+                </svg>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -221,14 +399,13 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
             </div>
           </div>
 
-          {/* Forecast Chart */}
           <div className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h4 className="font-bold text-black text-lg mb-1">
                   {timeframe === '6-month' ? '6-Month' : '12-Month'} Cost Forecast
                 </h4>
-                <p className="text-sm text-gray-500">Projected monthly costs based on current usage</p>
+                <p className="text-sm text-gray-500">Projected monthly costs based on {activeScenario} scenario</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -255,7 +432,6 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
             </div>
 
             <div className="relative bg-white rounded-lg p-4" style={{ height: chartHeight + 60 }}>
-              {/* Y-axis */}
               <div className="absolute left-0 top-4 bottom-12 w-16 flex flex-col justify-between text-xs text-gray-600 font-medium">
                 <span>${(maxCost).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                 <span>${(maxCost * 0.75).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
@@ -264,9 +440,7 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                 <span>$0</span>
               </div>
 
-              {/* Chart area */}
               <div className="ml-16 mr-4 relative" style={{ height: chartHeight }}>
-                {/* Grid lines */}
                 {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
                   <div
                     key={ratio}
@@ -275,14 +449,12 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                   />
                 ))}
 
-                {/* Chart SVG */}
                 <svg className="absolute inset-0 w-full h-full overflow-visible">
-                  {/* Historical line (solid) */}
                   {historicalMonths > 0 && (
                     <polyline
                       points={chartData.slice(0, historicalMonths + 1).map((d, i) => {
                         const x = (i / (numMonths - 1)) * 100;
-                        const y = (1 - ((d.cost - minCost) / (maxCost - minCost))) * 100;
+                        const y = (1 - ((d.cost) / maxCost)) * 100;
                         return `${x}%,${y}%`;
                       }).join(' ')}
                       fill="none"
@@ -293,12 +465,11 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                     />
                   )}
 
-                  {/* Forecast line (dashed) */}
                   <polyline
                     points={chartData.slice(historicalMonths).map((d, i) => {
                       const actualIndex = i + historicalMonths;
                       const x = (actualIndex / (numMonths - 1)) * 100;
-                      const y = (1 - ((d.cost - minCost) / (maxCost - minCost))) * 100;
+                      const y = (1 - ((d.cost) / maxCost)) * 100;
                       return `${x}%,${y}%`;
                     }).join(' ')}
                     fill="none"
@@ -309,10 +480,9 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                     strokeLinejoin="round"
                   />
 
-                  {/* Data points */}
                   {chartData.map((d, i) => {
                     const x = (i / (numMonths - 1)) * 100;
-                    const y = (1 - ((d.cost - minCost) / (maxCost - minCost))) * 100;
+                    const y = (1 - ((d.cost) / maxCost)) * 100;
                     const isHistorical = d.isHistorical;
                     return (
                       <g key={i}>
@@ -325,7 +495,6 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                           strokeWidth="3"
                           className="drop-shadow-md"
                         />
-                        {/* Value labels on hover */}
                         <title>${d.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</title>
                       </g>
                     );
@@ -333,7 +502,6 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                 </svg>
               </div>
 
-              {/* X-axis labels */}
               <div className="ml-16 mr-4 mt-2 flex justify-between text-xs text-gray-600 font-medium">
                 {chartData.map((d, i) => {
                   const showLabel = numMonths <= 6 || i % 2 === 0 || i === numMonths - 1;
@@ -345,7 +513,6 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                 })}
               </div>
 
-              {/* Legend */}
               <div className="ml-16 flex items-center justify-center gap-8 mt-6 pt-4 border-t border-gray-200">
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-1 bg-blue-600 rounded"></div>
@@ -371,12 +538,11 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
           </div>
         </div>
 
-        {/* Calculation Details */}
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-5">
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 stroke-blue-700 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-blue-900">
-              <p className="font-bold mb-3 text-base">Calculation Breakdown</p>
+              <p className="font-bold mb-3 text-base">How Credits Are Calculated</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-white/60 rounded-lg p-3">
                   <p className="font-semibold text-blue-900 mb-1">Base Credits</p>
@@ -391,12 +557,16 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                   <p className="text-blue-800">{estimatedAgents} agents (×{agentMultiplier.toFixed(2)})</p>
                 </div>
                 <div className="bg-white/60 rounded-lg p-3">
-                  <p className="font-semibold text-blue-900 mb-1">Final Cost</p>
-                  <p className="text-blue-800">{creditsPerTransaction} credits × ${creditCost}</p>
+                  <p className="font-semibold text-blue-900 mb-1">Scenario</p>
+                  <p className="text-blue-800 capitalize">{activeScenario} (×{scenarioMultiplier.toFixed(2)})</p>
                 </div>
               </div>
               <p className="mt-4 text-xs text-blue-700 bg-white/40 rounded-lg p-3">
-                💡 <strong>Note:</strong> Actual usage may vary based on conversation length, data processing complexity, and integration requirements. This forecast assumes consistent daily volume.
+                💡 <strong>Tip:</strong> Use the sliders above to simulate different usage volumes. The {activeScenario} scenario provides {
+                  activeScenario === 'optimized' ? 'the best cost efficiency' :
+                  activeScenario === 'premium' ? 'maximum performance and accuracy' :
+                  'balanced cost and performance'
+                }.
               </p>
             </div>
           </div>

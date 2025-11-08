@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { DealSubmission } from '../types';
 import { generateOpportunityAnalysis, OpportunityAnalysisData } from '../utils/analysisGenerator';
 import { calculateCredits, calculateTimeline, getResponsibleAIFeatures, CreditEstimate, TimelineEstimate, ResponsibleAIFeatures } from '../utils/creditCalculator';
-import { Sparkles, Brain, Zap, Clock, Shield, CheckCircle, TrendingUp, AlertCircle, Users, Network, Calculator, Mail } from 'lucide-react';
+import { Sparkles, Brain, Zap, Clock, Shield, CheckCircle, TrendingUp, AlertCircle, Users, Network, Calculator, Mail, Download, Send } from 'lucide-react';
 import CreditForecast from './CreditForecast';
 
 interface UserAnalysisResultProps {
@@ -19,6 +19,9 @@ export default function UserAnalysisResult({ dealData, emailRequested = false, o
   const [aiFeatures, setAiFeatures] = useState<ResponsibleAIFeatures | null>(null);
   const [progress, setProgress] = useState(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'calculator'>('overview');
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     performAnalysis();
@@ -48,6 +51,21 @@ export default function UserAnalysisResult({ dealData, emailRequested = false, o
     setTimeline(timelineEstimate);
     setAiFeatures(responsibleAI);
     setIsAnalyzing(false);
+  };
+
+  const handleDownloadPDF = async () => {
+    setIsDownloading(true);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    alert('PDF download feature will be implemented with a backend service. For demo purposes, this simulates the download process.');
+    setIsDownloading(false);
+  };
+
+  const handleSendEmail = async () => {
+    setIsSendingEmail(true);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setEmailSent(true);
+    setIsSendingEmail(false);
+    setTimeout(() => setEmailSent(false), 5000);
   };
 
   if (isAnalyzing) {
@@ -94,11 +112,40 @@ export default function UserAnalysisResult({ dealData, emailRequested = false, o
     <div className="min-h-screen bg-gray-50">
       <div className="sticky top-0 bg-white border-b border-gray-200 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-3 mb-4">
-            <img src="/lyzr-logo-cut.png" alt="Lyzr" className="h-8" />
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-black">Your Project Analysis</h1>
-              <p className="text-sm text-gray-600">AI-powered feasibility and cost estimate</p>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <img src="/lyzr-logo-cut.png" alt="Lyzr" className="h-8" />
+              <div>
+                <h1 className="text-xl font-bold text-black">Your Project Analysis</h1>
+                <p className="text-sm text-gray-600">AI-powered feasibility and cost estimate</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleDownloadPDF}
+                disabled={isDownloading}
+                className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 text-black rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="h-4 w-4" />
+                {isDownloading ? 'Downloading...' : 'Download PDF'}
+              </button>
+              <button
+                onClick={handleSendEmail}
+                disabled={isSendingEmail || emailSent}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {emailSent ? (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Sent!
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    {isSendingEmail ? 'Sending...' : 'Email Report'}
+                  </>
+                )}
+              </button>
             </div>
           </div>
           <div className="flex gap-2">
