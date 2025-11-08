@@ -132,7 +132,6 @@ export default function AdminView() {
   const [activeTab, setActiveTab] = useState<'analysis' | 'submission' | 'settings'>('analysis');
   const [showSettings, setShowSettings] = useState(false);
   const [creditRate, setCreditRate] = useState(creditPricing.getRate());
-  const [creditNotes, setCreditNotes] = useState(creditPricing.getPricing().notes || '');
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [currency, setCurrency] = useState<CurrencyCode>(creditPricing.getCurrency());
   const [dealPricingConfig, setDealPricingConfig] = useState<DealPricingConfig | null>(null);
@@ -209,7 +208,7 @@ export default function AdminView() {
   };
 
   const handleSaveSettings = () => {
-    creditPricing.setRate(creditRate, currency, creditNotes);
+    creditPricing.setRate(creditRate, currency);
     setSettingsSaved(true);
     setTimeout(() => setSettingsSaved(false), 3000);
   };
@@ -563,9 +562,13 @@ export default function AdminView() {
                   <div>
                     <h3 className="text-2xl font-bold text-black mb-1">Customer-Specific Pricing Configuration</h3>
                     <p className="text-sm text-gray-600">Customize credit rates and pricing for {selectedDeal.company}</p>
-                    {dealPricingConfig && (
+                    {dealPricingConfig ? (
                       <p className="text-xs text-green-600 font-medium mt-1">
                         ✓ Custom pricing configured • Last updated: {new Date(dealPricingConfig.updatedAt).toLocaleDateString()}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-blue-600 font-medium mt-1">
+                        Currently inheriting from global settings
                       </p>
                     )}
                   </div>
@@ -684,7 +687,7 @@ export default function AdminView() {
                 <div className="flex items-center justify-between pt-6 border-t-2 border-gray-300">
                   <div className="bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3">
                     <p className="text-sm text-blue-900">
-                      <strong>💡 Note:</strong> These settings apply only to <strong>{selectedDeal.company}</strong>
+                      <strong>💡 Note:</strong> These settings override global defaults and apply only to <strong>{selectedDeal.company}</strong>
                     </p>
                   </div>
                   <button
@@ -717,29 +720,29 @@ export default function AdminView() {
                   <div className="flex gap-3">
                     <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">1</div>
                     <div>
-                      <p className="font-semibold text-black mb-1">Set Custom Rates</p>
-                      <p>Configure a specific $ per credit rate for this customer based on contract terms, volume discounts, or enterprise agreements.</p>
+                      <p className="font-semibold text-black mb-1">Inherits Global Defaults</p>
+                      <p>By default, each deal inherits pricing from global settings. This ensures consistency across all opportunities.</p>
                     </div>
                   </div>
                   <div className="flex gap-3">
                     <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">2</div>
+                    <div>
+                      <p className="font-semibold text-black mb-1">Override When Needed</p>
+                      <p>Configure custom rates for this customer based on contract terms, volume discounts, or enterprise agreements that differ from global settings.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">3</div>
                     <div>
                       <p className="font-semibold text-black mb-1">Currency Flexibility</p>
                       <p>Choose the customer's preferred currency for quotes and invoicing. All cost calculations will automatically convert.</p>
                     </div>
                   </div>
                   <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">3</div>
-                    <div>
-                      <p className="font-semibold text-black mb-1">Automatic Application</p>
-                      <p>Once saved, all cost estimates for this deal will use the custom pricing instead of default rates.</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
                     <div className="flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">4</div>
                     <div>
                       <p className="font-semibold text-black mb-1">Document Everything</p>
-                      <p>Use Account Notes to record the reasoning behind pricing decisions for future reference and audit trails.</p>
+                      <p>Use Account Notes to record the reasoning behind custom pricing, special terms, and any deviations from global defaults.</p>
                     </div>
                   </div>
                 </div>
@@ -797,8 +800,8 @@ export default function AdminView() {
                   <DollarSign className="h-8 w-8 stroke-white" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-black mb-1">Credit Pricing & Currency Configuration</h3>
-                  <p className="text-sm text-gray-600">Set custom credit rates and default currency for this account</p>
+                  <h3 className="text-2xl font-bold text-black mb-1">Global Credit Pricing Configuration</h3>
+                  <p className="text-sm text-gray-600">Set default credit rates and currency for all deals (can be overridden per opportunity)</p>
                 </div>
               </div>
               <button
@@ -902,23 +905,10 @@ export default function AdminView() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-5 mb-6 border-2 border-gray-200">
-              <label className="text-sm font-semibold text-gray-800 mb-3 block">
-                📝 Account Notes
-              </label>
-              <textarea
-                value={creditNotes}
-                onChange={(e) => setCreditNotes(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white"
-                rows={3}
-                placeholder="e.g., Enterprise tier customer, annual contract discount applied, special volume pricing..."
-              />
-            </div>
-
             <div className="flex items-center justify-between pt-6 border-t-2 border-gray-300">
-              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl px-4 py-3">
-                <p className="text-sm text-yellow-900">
-                  <strong>💡 Remember:</strong> Click <strong>Save Settings</strong> to apply changes across all calculators
+              <div className="bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3">
+                <p className="text-sm text-blue-900">
+                  <strong>💡 Note:</strong> These are global defaults. Individual deals can override these settings with customer-specific pricing.
                 </p>
               </div>
               <button
