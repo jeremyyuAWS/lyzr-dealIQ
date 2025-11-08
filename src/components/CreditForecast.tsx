@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Calculator, TrendingUp, Calendar, Info } from 'lucide-react';
-import { DealSubmission } from '../lib/supabase';
+import { DealSubmission } from '../types';
 
 interface CreditForecastProps {
   estimatedAgents: number;

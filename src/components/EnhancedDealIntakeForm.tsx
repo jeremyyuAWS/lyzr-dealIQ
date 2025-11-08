@@ -1,6 +1,7 @@
 import { useState, FormEvent, useEffect, useRef } from 'react';
 import { Upload, Link as LinkIcon, X, CheckCircle2, Sparkles, User, FileText, Settings, Briefcase, Paperclip, Save, Clock, Gauge } from 'lucide-react';
-import { supabase, DealSubmission } from '../lib/supabase';
+import { DealSubmission } from '../types';
+import { storage } from '../lib/storage';
 import { SCENARIOS, Scenario } from '../data/scenarios';
 import FormProgressIndicator from './FormProgressIndicator';
 import CollapsibleSection from './CollapsibleSection';
@@ -303,13 +304,7 @@ export default function EnhancedDealIntakeForm() {
         setIsAutoFilling(false);
         setActiveScenario(null);
       } else {
-        const { data, error } = await supabase
-          .from('deal_submissions')
-          .insert([formData])
-          .select()
-          .single();
-
-        if (error) throw error;
+        const data = await storage.saveSubmission(formData as DealSubmission);
 
         clearDraft();
         setSubmittedDeal(data);

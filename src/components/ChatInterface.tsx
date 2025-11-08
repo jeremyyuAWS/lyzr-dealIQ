@@ -1,6 +1,6 @@
 import { useState, FormEvent, useRef, useEffect } from 'react';
 import { Send, Bot, User } from 'lucide-react';
-import { supabase, DealSubmission } from '../lib/supabase';
+import { DealSubmission } from '../types';
 
 interface Message {
   id: string;

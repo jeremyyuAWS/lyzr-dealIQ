@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, DealSubmission } from '../lib/supabase';
+import { DealSubmission } from '../types';
 
 const DRAFT_KEY = 'deal_intake_draft';
 const AUTO_SAVE_DELAY = 2000;

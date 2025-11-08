@@ -1,4 +1,4 @@
-import { DealSubmission } from '../lib/supabase';
+import { DealSubmission } from '../types';
 
 export interface CreditEstimate {
   total_credits: number;

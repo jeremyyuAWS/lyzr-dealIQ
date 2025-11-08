@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DealSubmission } from '../lib/supabase';
+import { DealSubmission } from '../types';
 import { generateOpportunityAnalysis, OpportunityAnalysisData } from '../utils/analysisGenerator';
 import { calculateCredits, calculateTimeline, getResponsibleAIFeatures, CreditEstimate, TimelineEstimate, ResponsibleAIFeatures } from '../utils/creditCalculator';
 import { Sparkles, Brain, Zap, Clock, Shield, CheckCircle, TrendingUp, AlertCircle, Users, Network, Calculator } from 'lucide-react';

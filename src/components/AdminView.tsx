@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { supabase, DealSubmission } from '../lib/supabase';
+import { DealSubmission } from '../types';
+import { storage } from '../lib/storage';
 import OpportunityAnalysis from './OpportunityAnalysis';
 import CreditForecast from './CreditForecast';
 import { generateOpportunityAnalysis, OpportunityAnalysisData } from '../utils/analysisGenerator';

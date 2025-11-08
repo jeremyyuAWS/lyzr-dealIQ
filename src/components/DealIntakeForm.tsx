@@ -1,6 +1,7 @@
 import { useState, FormEvent, useEffect, useRef } from 'react';
 import { Upload, Link as LinkIcon, X, CheckCircle2, Sparkles } from 'lucide-react';
-import { supabase, DealSubmission } from '../lib/supabase';
+import { DealSubmission } from '../types';
+import { storage } from '../lib/storage';
 import { SCENARIOS, Scenario } from '../data/scenarios';
 
 const REGIONS = ['NA', 'EMEA', 'APAC', 'India', 'LATAM'];
