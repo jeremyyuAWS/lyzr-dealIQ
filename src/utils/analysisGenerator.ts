@@ -155,33 +155,79 @@ function generateToolDetails(deal: DealSubmission) {
 
   if (deal.critical_integrations?.includes('Salesforce')) {
     tools.push({
-      name: 'Salesforce API Tool',
-      purpose: 'Query and update Salesforce records, manage opportunities and contacts',
-      integration: 'REST API via OAuth 2.0'
+      name: 'Salesforce CRM Tool',
+      purpose: 'Query and update Salesforce records, manage opportunities, contacts, and custom objects',
+      integration: 'REST API via OAuth 2.0 with real-time event streaming'
     });
   }
 
   if (deal.critical_integrations?.includes('Microsoft SharePoint')) {
     tools.push({
-      name: 'SharePoint Document Tool',
-      purpose: 'Access, create, and manage SharePoint documents and lists',
-      integration: 'Microsoft Graph API'
+      name: 'SharePoint Document Management Tool',
+      purpose: 'Access, create, and manage SharePoint documents, lists, and metadata',
+      integration: 'Microsoft Graph API with delegated permissions'
     });
   }
 
-  if (deal.critical_integrations?.includes('SAP') || deal.critical_integrations?.includes('Oracle')) {
+  if (deal.critical_integrations?.includes('Snowflake')) {
     tools.push({
-      name: 'ERP Integration Tool',
-      purpose: 'Connect to enterprise resource planning systems for data synchronization',
-      integration: 'SOAP/REST APIs with custom authentication'
+      name: 'Snowflake Data Warehouse Tool',
+      purpose: 'Execute queries, retrieve analytics data, and perform data transformations',
+      integration: 'Snowflake Connector with OAuth authentication'
+    });
+  }
+
+  if (deal.critical_integrations?.includes('ServiceNow')) {
+    tools.push({
+      name: 'ServiceNow ITSM Tool',
+      purpose: 'Create, update, and query incidents, change requests, and service tickets',
+      integration: 'ServiceNow REST API with table API access'
+    });
+  }
+
+  if (deal.critical_integrations?.includes('Epic')) {
+    tools.push({
+      name: 'Epic EHR Integration Tool',
+      purpose: 'Access patient records, appointments, and clinical data with FHIR compliance',
+      integration: 'Epic FHIR API with OAuth 2.0 authorization'
+    });
+  }
+
+  if (deal.critical_integrations?.includes('SAP')) {
+    tools.push({
+      name: 'SAP ERP Tool',
+      purpose: 'Connect to SAP systems for financial data, inventory, and supply chain operations',
+      integration: 'SAP OData API with OAuth/SAML authentication'
+    });
+  }
+
+  if (deal.critical_integrations?.includes('Workday')) {
+    tools.push({
+      name: 'Workday HR Tool',
+      purpose: 'Access employee data, payroll information, and organizational hierarchies',
+      integration: 'Workday REST API with ISU authentication'
+    });
+  }
+
+  if (deal.critical_integrations?.includes('Jira')) {
+    tools.push({
+      name: 'Jira Project Management Tool',
+      purpose: 'Create, update, and track issues, projects, and workflows',
+      integration: 'Jira REST API v3 with OAuth 2.0'
     });
   }
 
   if (deal.critical_integrations && deal.critical_integrations.length > 0) {
     tools.push({
-      name: 'Generic HTTP Tool',
-      purpose: 'Handle custom API calls to various third-party services',
-      integration: 'Configurable HTTP client with multiple auth methods'
+      name: 'Generic HTTP Client Tool',
+      purpose: 'Handle custom API calls to additional third-party services and legacy systems',
+      integration: 'Configurable HTTP client supporting OAuth, API keys, and basic auth'
+    });
+
+    tools.push({
+      name: 'Data Validation Tool',
+      purpose: 'Validate and sanitize data from all integrated sources before processing',
+      integration: 'Schema validation with custom business rules engine'
     });
   }
 
@@ -194,11 +240,12 @@ function generateMCPDetails(deal: DealSubmission) {
   if (deal.deployment_preference?.includes('On-Prem') || deal.data_privacy_requirements?.includes('Confidential')) {
     mcpServers.push({
       name: 'Secure Data Gateway MCP',
-      purpose: 'Provides secure access to on-premise data sources while maintaining data sovereignty',
+      purpose: 'Provides secure access to on-premise data sources while maintaining data sovereignty and compliance',
       endpoints: [
-        '/data/query - Execute secure data queries',
-        '/data/transform - Transform data within secure boundary',
-        '/audit/log - Track all data access for compliance'
+        '/v1/data/query - Execute secure SQL queries with row-level security',
+        '/v1/data/transform - Transform and enrich data within secure boundary',
+        '/v1/audit/log - Track all data access for compliance reporting',
+        '/v1/encryption/manage - Manage encryption keys and data masking rules'
       ]
     });
   }
@@ -206,11 +253,66 @@ function generateMCPDetails(deal: DealSubmission) {
   if (deal.critical_integrations && deal.critical_integrations.length > 2) {
     mcpServers.push({
       name: 'Integration Hub MCP',
-      purpose: 'Centralized integration point for multiple external systems',
+      purpose: 'Centralized integration orchestration for multiple external systems with retry logic and error handling',
       endpoints: [
-        '/integrate/sync - Synchronize data across systems',
-        '/integrate/webhook - Handle incoming webhooks',
-        '/integrate/status - Monitor integration health'
+        '/v1/integrate/sync - Synchronize data across systems with conflict resolution',
+        '/v1/integrate/webhook - Handle incoming webhooks with signature verification',
+        '/v1/integrate/batch - Process bulk data transfers efficiently',
+        '/v1/integrate/status - Monitor integration health and performance metrics',
+        '/v1/integrate/retry - Manage failed requests with exponential backoff'
+      ]
+    });
+  }
+
+  if (deal.data_privacy_requirements?.includes('PHI') || deal.data_privacy_requirements?.includes('PCI')) {
+    mcpServers.push({
+      name: 'Compliance & Security MCP',
+      purpose: 'Enforce HIPAA/PCI compliance rules, data encryption, and access controls',
+      endpoints: [
+        '/v1/compliance/validate - Validate requests against compliance rules',
+        '/v1/security/encrypt - Encrypt sensitive data fields',
+        '/v1/security/decrypt - Decrypt data with proper authorization',
+        '/v1/audit/access - Log all PHI/PCI data access with timestamps',
+        '/v1/compliance/report - Generate compliance audit reports'
+      ]
+    });
+  }
+
+  if (deal.deployment_preference?.includes('Customer VPC')) {
+    mcpServers.push({
+      name: 'VPC Network Gateway MCP',
+      purpose: 'Manages secure connectivity between Lyzr services and customer VPC resources',
+      endpoints: [
+        '/v1/network/connect - Establish secure VPN/PrivateLink connections',
+        '/v1/network/firewall - Configure VPC security groups and firewall rules',
+        '/v1/network/dns - Resolve private DNS names within customer network',
+        '/v1/network/monitor - Track network latency and connection health'
+      ]
+    });
+  }
+
+  if (deal.critical_integrations?.includes('Snowflake') || deal.critical_integrations?.includes('SAP')) {
+    mcpServers.push({
+      name: 'Enterprise Data MCP',
+      purpose: 'Optimized data warehouse and ERP connectivity with connection pooling and caching',
+      endpoints: [
+        '/v1/warehouse/query - Execute optimized data warehouse queries',
+        '/v1/warehouse/cache - Manage query result caching for performance',
+        '/v1/erp/transaction - Handle transactional ERP operations',
+        '/v1/data/lineage - Track data lineage and transformation history'
+      ]
+    });
+  }
+
+  if (mcpServers.length > 0) {
+    mcpServers.push({
+      name: 'Observability & Monitoring MCP',
+      purpose: 'Centralized logging, metrics, and tracing for all MCP operations',
+      endpoints: [
+        '/v1/metrics/collect - Collect performance and usage metrics',
+        '/v1/logs/stream - Stream real-time logs to observability platform',
+        '/v1/trace/context - Distributed tracing across all MCP servers',
+        '/v1/alerts/trigger - Trigger alerts based on configurable thresholds'
       ]
     });
   }

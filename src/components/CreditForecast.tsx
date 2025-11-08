@@ -303,7 +303,7 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
 
             <div className="p-5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl border-2 border-blue-400 shadow-md">
               <p className="text-xs text-blue-900 mb-3 uppercase tracking-wide font-bold">Monthly Cost</p>
-              <p className="text-5xl font-bold text-blue-950 mb-1">${creditPricing.formatCost(monthlyCredits)}</p>
+              <p className="text-5xl font-bold text-blue-950 mb-1">{creditPricing.formatCost(monthlyCredits)}</p>
               <p className="text-sm text-blue-800 mt-2 font-medium">{monthlyCredits.toLocaleString()} × ${creditCost.toFixed(3)} per credit</p>
             </div>
           </div>
