@@ -75,11 +75,7 @@ export default function ChatInterface({ onDataUpdate }: ChatInterfaceProps = {})
 
   const submitDeal = async (data: Partial<DealSubmission>) => {
     try {
-      const { error } = await supabase
-        .from('deal_submissions')
-        .insert([data]);
-
-      if (error) throw error;
+      console.log('Deal submission:', data);
 
       setMessages(prev => [...prev, {
         id: Date.now().toString(),

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, Maximize2, Minimize2, X } from 'lucide-react';
 import ChatInterface from './ChatInterface';
+import CreditCalculatorChat from './CreditCalculatorChat';
 
 interface ExpandableChatWidgetProps {
   onDataUpdate?: (data: any) => void;
@@ -9,9 +10,11 @@ interface ExpandableChatWidgetProps {
 }
 
 type ViewMode = 'compact' | 'fullscreen';
+type ChatMode = 'deal' | 'calculator';
 
 export default function ExpandableChatWidget({ onDataUpdate, isVisible, onToggle }: ExpandableChatWidgetProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('compact');
+  const [chatMode, setChatMode] = useState<ChatMode>('calculator');
 
   useEffect(() => {
     if (!isVisible) {
@@ -52,34 +55,64 @@ export default function ExpandableChatWidget({ onDataUpdate, isVisible, onToggle
 
   return (
     <div className={`${getWidgetStyles()} bg-white border border-gray-200 flex flex-col overflow-hidden z-50 transition-all duration-300`}>
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          <h3 className="text-white font-semibold text-sm">AI Deal Assistant</h3>
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-4 py-3 flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <h3 className="text-white font-semibold text-sm">
+              {chatMode === 'calculator' ? 'Credit Calculator' : 'Deal Assistant'}
+            </h3>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleFullscreen}
+              className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+              aria-label={viewMode === 'fullscreen' ? 'Exit fullscreen' : 'Fullscreen'}
+            >
+              {viewMode === 'fullscreen' ? (
+                <Minimize2 className="h-4 w-4 stroke-white" />
+              ) : (
+                <Maximize2 className="h-4 w-4 stroke-white" />
+              )}
+            </button>
+            <button
+              onClick={handleMinimize}
+              className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Close chat"
+            >
+              <X className="h-4 w-4 stroke-white" />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex gap-2">
           <button
-            onClick={handleFullscreen}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label={viewMode === 'fullscreen' ? 'Exit fullscreen' : 'Fullscreen'}
+            onClick={() => setChatMode('calculator')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              chatMode === 'calculator'
+                ? 'bg-white text-black'
+                : 'bg-white/10 text-white hover:bg-white/20'
+            }`}
           >
-            {viewMode === 'fullscreen' ? (
-              <Minimize2 className="h-4 w-4 stroke-white" />
-            ) : (
-              <Maximize2 className="h-4 w-4 stroke-white" />
-            )}
+            Credit Calculator
           </button>
           <button
-            onClick={handleMinimize}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="Close chat"
+            onClick={() => setChatMode('deal')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              chatMode === 'deal'
+                ? 'bg-white text-black'
+                : 'bg-white/10 text-white hover:bg-white/20'
+            }`}
           >
-            <X className="h-4 w-4 stroke-white" />
+            Deal Submission
           </button>
         </div>
       </div>
       <div className="flex-1 overflow-hidden">
-        <ChatInterface onDataUpdate={onDataUpdate} />
+        {chatMode === 'calculator' ? (
+          <CreditCalculatorChat onExportToForm={onDataUpdate} />
+        ) : (
+          <ChatInterface onDataUpdate={onDataUpdate} />
+        )}
       </div>
     </div>
   );
