@@ -6,6 +6,8 @@ import CreditForecast from './CreditForecast';
 import { generateOpportunityAnalysis, OpportunityAnalysisData } from '../utils/analysisGenerator';
 import { creditPricing } from '../lib/creditPricing';
 import { ChevronRight, TrendingUp, Clock, Building, Mail, Calendar, Sparkles, X, Settings, DollarSign, Save, Globe } from 'lucide-react';
+import { CURRENCIES, CurrencyCode } from '../lib/creditPricing';
+import CreditPricingTable from './CreditPricingTable';
 
 const SYNTHETIC_DEALS: DealSubmission[] = [
   {
@@ -665,6 +667,10 @@ export default function AdminView() {
                   </>
                 )}
               </button>
+            </div>
+
+            <div className="mt-8">
+              <CreditPricingTable />
             </div>
           </div>
         )}
