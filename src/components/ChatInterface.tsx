@@ -1,6 +1,7 @@
 import { useState, FormEvent, useRef, useEffect } from 'react';
-import { Send, Bot, User } from 'lucide-react';
+import { Send, Bot, User, Play, Square } from 'lucide-react';
 import { DealSubmission } from '../types';
+import { CHAT_SCENARIOS, ChatMessage } from '../data/chatScenarios';
 
 interface Message {
   id: string;
@@ -37,7 +38,10 @@ export default function ChatInterface({ onDataUpdate }: ChatInterfaceProps = {})
   const [input, setInput] = useState('');
   const [chatState, setChatState] = useState<ChatState>({ step: 0, data: {} });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const [showScenarios, setShowScenarios] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const autoPlayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -133,14 +137,116 @@ export default function ChatInterface({ onDataUpdate }: ChatInterfaceProps = {})
   };
 
   const resetChat = () => {
+    if (autoPlayTimeoutRef.current) {
+      clearTimeout(autoPlayTimeoutRef.current);
+    }
     setMessages([
       { id: '0', role: 'assistant', content: QUESTIONS[0].question }
     ]);
     setChatState({ step: 0, data: {} });
+    setIsAutoPlaying(false);
+    setShowScenarios(false);
   };
+
+  const stopAutoPlay = () => {
+    if (autoPlayTimeoutRef.current) {
+      clearTimeout(autoPlayTimeoutRef.current);
+    }
+    setIsAutoPlaying(false);
+  };
+
+  const playScenario = (scenarioIndex: number) => {
+    if (autoPlayTimeoutRef.current) {
+      clearTimeout(autoPlayTimeoutRef.current);
+    }
+
+    const scenario = CHAT_SCENARIOS[scenarioIndex];
+    setMessages([]);
+    setChatState({ step: 0, data: {} });
+    setIsAutoPlaying(true);
+    setShowScenarios(false);
+
+    let messageIndex = 0;
+    let cumulativeDelay = 0;
+
+    const playNextMessage = () => {
+      if (messageIndex >= scenario.conversation.length) {
+        setIsAutoPlaying(false);
+        return;
+      }
+
+      const chatMsg = scenario.conversation[messageIndex];
+      const newMessage: Message = {
+        id: `${Date.now()}-${messageIndex}`,
+        role: chatMsg.role,
+        content: chatMsg.content
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+      messageIndex++;
+
+      if (messageIndex < scenario.conversation.length) {
+        const nextDelay = scenario.conversation[messageIndex].delay || 1000;
+        autoPlayTimeoutRef.current = setTimeout(playNextMessage, nextDelay);
+      } else {
+        setIsAutoPlaying(false);
+      }
+    };
+
+    const firstDelay = scenario.conversation[0].delay || 500;
+    autoPlayTimeoutRef.current = setTimeout(playNextMessage, firstDelay);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (autoPlayTimeoutRef.current) {
+        clearTimeout(autoPlayTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="h-full flex flex-col bg-white">
+      <div className="border-b border-gray-200 p-4 bg-gradient-to-r from-gray-50 to-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-black text-lg">Deal Assistant Chat</h3>
+            <p className="text-xs text-gray-600">Natural conversation to submit opportunities</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {isAutoPlaying ? (
+              <button
+                onClick={stopAutoPlay}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+              >
+                <Square className="h-4 w-4" fill="white" />
+                Stop Demo
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowScenarios(!showScenarios)}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+              >
+                <Play className="h-4 w-4" />
+                {showScenarios ? 'Hide Demos' : 'Play Demo'}
+              </button>
+            )}
+          </div>
+        </div>
+        {showScenarios && !isAutoPlaying && (
+          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+            {CHAT_SCENARIOS.map((scenario, index) => (
+              <button
+                key={index}
+                onClick={() => playScenario(index)}
+                className={`px-3 py-2 rounded-lg border-2 transition-all text-xs font-medium ${scenario.color}`}
+              >
+                {scenario.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.map((message) => (
           <div
@@ -186,12 +292,19 @@ export default function ChatInterface({ onDataUpdate }: ChatInterfaceProps = {})
       </div>
 
       <div className="border-t border-gray-200 p-4 bg-white">
+        {isAutoPlaying && (
+          <div className="mb-3 bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3">
+            <p className="text-sm text-blue-900 font-medium">
+              Demo in progress... Watch the conversation flow between chat and form.
+            </p>
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="flex gap-3">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your response..."
-            disabled={isSubmitting}
+            disabled={isSubmitting || isAutoPlaying}
             rows={3}
             className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black text-black disabled:opacity-50 resize-none"
             onKeyDown={(e) => {
@@ -203,7 +316,7 @@ export default function ChatInterface({ onDataUpdate }: ChatInterfaceProps = {})
           />
           <button
             type="submit"
-            disabled={!input.trim() || isSubmitting}
+            disabled={!input.trim() || isSubmitting || isAutoPlaying}
             className="px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 self-end"
           >
             <Send className="h-5 w-5" />
