@@ -3,6 +3,7 @@ import { Send, Bot, User, TrendingUp, FileText, Download } from 'lucide-react';
 import { DealSubmission } from '../types';
 import { DEMO_SCENARIOS, CreditEstimate, ScenarioInputs } from '../types/agentPricing';
 import { estimateCredits, formatCreditDisplay, formatUSDDisplay, convertToOldPricing } from '../utils/creditEstimator';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   id: string;
@@ -355,8 +356,41 @@ export default function CreditCalculatorChat({ onExportToForm }: CreditCalculato
                   : 'bg-gray-100 text-black'
               }`}
             >
-              <div className="text-sm leading-relaxed whitespace-pre-line">
-                {message.content}
+              <div className="text-sm leading-relaxed prose prose-sm max-w-none">
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                    strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                    em: ({ children }) => <em className="italic">{children}</em>,
+                    ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+                    li: ({ children }) => <li className="ml-2">{children}</li>,
+                    code: ({ children }) => (
+                      <code className={`px-1.5 py-0.5 rounded text-xs font-mono ${
+                        message.role === 'user' ? 'bg-gray-800' : 'bg-gray-200'
+                      }`}>
+                        {children}
+                      </code>
+                    ),
+                    h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-3 first:mt-0">{children}</h1>,
+                    h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h2>,
+                    h3: ({ children }) => <h3 className="text-sm font-bold mb-1 mt-2 first:mt-0">{children}</h3>,
+                    a: ({ children, href }) => (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`underline hover:no-underline ${
+                          message.role === 'user' ? 'text-blue-300' : 'text-blue-600'
+                        }`}
+                      >
+                        {children}
+                      </a>
+                    ),
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
               </div>
               {message.estimate && message.role === 'assistant' && (
                 <div className="mt-3 flex gap-2 flex-wrap">
