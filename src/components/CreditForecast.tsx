@@ -119,7 +119,11 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
         </div>
         <button
           onClick={() => setShowBreakdown(!showBreakdown)}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm font-medium"
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all text-sm font-bold shadow-md transform hover:scale-105 ${
+            showBreakdown
+              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+              : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 hover:from-gray-200 hover:to-gray-300'
+          }`}
         >
           <PieChart className="h-4 w-4" />
           {showBreakdown ? 'Hide' : 'Show'} Breakdown
@@ -291,7 +295,12 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
         </div>
 
         {showBreakdown && (
-          <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-5">
+          <div
+            className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-5 animate-slideIn"
+            style={{
+              animation: 'slideIn 0.5s ease-out forwards'
+            }}
+          >
             <div className="flex items-center gap-2 mb-4">
               <PieChart className="h-5 w-5 stroke-purple-700" />
               <h4 className="font-bold text-purple-900">Cost Breakdown by Category</h4>
@@ -448,6 +457,13 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                 ))}
 
                 <svg className="absolute inset-0 w-full h-full overflow-visible">
+                  <defs>
+                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#2563eb" />
+                      <stop offset="100%" stopColor="#93c5fd" />
+                    </linearGradient>
+                  </defs>
+
                   {historicalMonths > 0 && (
                     <polyline
                       points={chartData.slice(0, historicalMonths + 1).map((d, i) => {
@@ -460,6 +476,11 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                       strokeWidth="4"
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                      style={{
+                        strokeDasharray: '1000',
+                        strokeDashoffset: '1000',
+                        animation: 'drawLine 1.5s ease-out forwards'
+                      }}
                     />
                   )}
 
@@ -476,6 +497,11 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                     strokeDasharray="12,8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    style={{
+                      strokeDasharray: '1000',
+                      strokeDashoffset: '1000',
+                      animation: 'drawLine 1.5s ease-out 0.3s forwards'
+                    }}
                   />
 
                   {chartData.map((d, i) => {
@@ -492,6 +518,21 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                           stroke="white"
                           strokeWidth="3"
                           className="drop-shadow-md"
+                          style={{
+                            opacity: 0,
+                            animation: `fadeInDot 0.4s ease-out ${0.5 + i * 0.15}s forwards`
+                          }}
+                        />
+                        <circle
+                          cx={`${x}%`}
+                          cy={`${y}%`}
+                          r="12"
+                          fill={isHistorical ? '#2563eb' : '#93c5fd'}
+                          opacity="0.2"
+                          style={{
+                            opacity: 0,
+                            animation: `pulseDot 2s ease-in-out ${0.5 + i * 0.15}s infinite`
+                          }}
                         />
                         <title>${d.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</title>
                       </g>
