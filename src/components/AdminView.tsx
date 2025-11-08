@@ -546,123 +546,154 @@ export default function AdminView() {
         </div>
 
         {showSettings && (
-          <div className="bg-white border-2 border-blue-300 rounded-2xl p-6 mb-6 shadow-lg">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <DollarSign className="h-6 w-6 stroke-blue-700" />
+          <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 border-2 border-blue-300 rounded-2xl p-8 mb-6 shadow-xl">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-3 shadow-lg">
+                  <DollarSign className="h-8 w-8 stroke-white" />
+                </div>
                 <div>
-                  <h3 className="text-xl font-bold text-black">Credit Pricing & Currency Configuration</h3>
+                  <h3 className="text-2xl font-bold text-black mb-1">Credit Pricing & Currency Configuration</h3>
                   <p className="text-sm text-gray-600">Set custom credit rates and default currency for this account</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowSettings(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
               >
-                <X className="h-5 w-5 stroke-gray-600" />
+                <X className="h-6 w-6 stroke-gray-700" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                  Credit Rate (USD per credit)
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="bg-white rounded-xl p-5 border-2 border-blue-200 shadow-md">
+                <label className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  <Globe className="h-5 w-5 stroke-blue-600" />
+                  Currency Selection
+                </label>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+                  className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-bold cursor-pointer bg-blue-50"
+                >
+                  {CURRENCIES.map((curr) => (
+                    <option key={curr.code} value={curr.code}>
+                      {curr.symbol} {curr.code} - {curr.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="mt-3 bg-blue-100 rounded-lg p-3">
+                  <p className="text-xs text-blue-800"><strong>Selected:</strong> All cost displays will use <span className="font-bold">{CURRENCIES.find(c => c.code === currency)?.symbol} {currency}</span></p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-5 border-2 border-purple-200 shadow-md">
+                <label className="text-sm font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 stroke-purple-600" />
+                  Rate per Credit
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-700 font-bold text-lg">
+                    {CURRENCIES.find(c => c.code === currency)?.symbol}
+                  </span>
                   <input
                     type="number"
-                    step="0.001"
+                    step="0.0001"
                     min="0"
                     value={creditRate}
                     onChange={(e) => setCreditRate(parseFloat(e.target.value) || 0)}
-                    className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-bold"
+                    className="w-full pl-10 pr-4 py-3 border-2 border-purple-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg font-bold bg-purple-50"
                     placeholder="0.01"
                   />
                 </div>
-                <div className="mt-3 bg-blue-50 rounded-lg p-3">
-                  <p className="text-xs text-blue-800 mb-2"><strong>Common Pricing Tiers:</strong></p>
+                <div className="mt-3 bg-purple-100 rounded-lg p-3">
+                  <p className="text-xs text-purple-800 font-semibold mb-2">Quick Set:</p>
                   <div className="grid grid-cols-3 gap-2">
                     <button
                       onClick={() => setCreditRate(0.015)}
-                      className="px-2 py-1.5 bg-white hover:bg-blue-100 rounded text-xs font-medium border border-blue-200 transition-colors"
+                      className="px-2 py-1.5 bg-white hover:bg-purple-200 rounded text-xs font-medium border-2 border-purple-300 transition-colors"
                     >
-                      Standard: $0.015
+                      0.015
                     </button>
                     <button
                       onClick={() => setCreditRate(0.01)}
-                      className="px-2 py-1.5 bg-white hover:bg-blue-100 rounded text-xs font-medium border border-blue-200 transition-colors"
+                      className="px-2 py-1.5 bg-white hover:bg-purple-200 rounded text-xs font-medium border-2 border-purple-300 transition-colors"
                     >
-                      Enterprise: $0.01
+                      0.010
                     </button>
                     <button
                       onClick={() => setCreditRate(0.007)}
-                      className="px-2 py-1.5 bg-white hover:bg-blue-100 rounded text-xs font-medium border border-blue-200 transition-colors"
+                      className="px-2 py-1.5 bg-white hover:bg-purple-200 rounded text-xs font-medium border-2 border-purple-300 transition-colors"
                     >
-                      Volume: $0.007
+                      0.007
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-semibold text-gray-700 mb-2 block flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Default Currency
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-300 shadow-md">
+                <label className="text-sm font-semibold text-green-900 mb-3 block">
+                  💰 Live Cost Preview
                 </label>
-                <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-bold cursor-pointer"
-                >
-                  <option value="USD">$ USD - US Dollar</option>
-                  <option value="EUR">€ EUR - Euro</option>
-                  <option value="GBP">£ GBP - British Pound</option>
-                  <option value="INR">₹ INR - Indian Rupee</option>
-                  <option value="AUD">A$ AUD - Australian Dollar</option>
-                  <option value="CAD">C$ CAD - Canadian Dollar</option>
-                  <option value="JPY">¥ JPY - Japanese Yen</option>
-                </select>
-                <div className="mt-3 bg-green-50 rounded-lg p-3">
-                  <p className="text-xs text-green-800"><strong>Note:</strong> Currency can be changed per-analysis in the results view. This setting only affects the default selection.</p>
+                <div className="space-y-3">
+                  <div className="bg-white rounded-lg p-3 border border-green-200">
+                    <p className="text-xs text-green-700 mb-1">100 credits</p>
+                    <p className="text-2xl font-bold text-green-900">
+                      {CURRENCIES.find(c => c.code === currency)?.symbol}{(100 * creditRate).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-green-200">
+                    <p className="text-xs text-green-700 mb-1">1,000 credits</p>
+                    <p className="text-2xl font-bold text-green-900">
+                      {CURRENCIES.find(c => c.code === currency)?.symbol}{(1000 * creditRate).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-green-200">
+                    <p className="text-xs text-green-700 mb-1">10,000 credits</p>
+                    <p className="text-2xl font-bold text-green-900">
+                      {CURRENCIES.find(c => c.code === currency)?.symbol}{(10000 * creditRate).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-xl p-4 mb-6">
-              <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                Account Notes
+            <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-5 mb-6 border-2 border-gray-200">
+              <label className="text-sm font-semibold text-gray-800 mb-3 block">
+                📝 Account Notes
               </label>
               <textarea
                 value={creditNotes}
                 onChange={(e) => setCreditNotes(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white"
                 rows={3}
-                placeholder="e.g., Enterprise tier customer, annual contract discount applied..."
+                placeholder="e.g., Enterprise tier customer, annual contract discount applied, special volume pricing..."
               />
             </div>
 
-            <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-              <div className="text-sm text-gray-600">
-                <p><strong>Example:</strong> 1,000 credits at ${creditRate.toFixed(3)}/credit = <span className="font-bold text-black">${(1000 * creditRate).toFixed(2)}</span></p>
+            <div className="flex items-center justify-between pt-6 border-t-2 border-gray-300">
+              <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl px-4 py-3">
+                <p className="text-sm text-yellow-900">
+                  <strong>💡 Remember:</strong> Click <strong>Save Settings</strong> to apply changes across all calculators
+                </p>
               </div>
               <button
                 onClick={handleSaveSettings}
                 disabled={settingsSaved}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                className={`flex items-center gap-2 px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-lg ${
                   settingsSaved
-                    ? 'bg-green-600 text-white'
-                    : 'bg-black text-white hover:bg-gray-800'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
+                    : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transform hover:scale-105'
                 }`}
               >
                 {settingsSaved ? (
                   <>
-                    <Save className="h-4 w-4" />
-                    Saved!
+                    <Save className="h-5 w-5" />
+                    Saved Successfully!
                   </>
                 ) : (
                   <>
-                    <Save className="h-4 w-4" />
+                    <Save className="h-5 w-5" />
                     Save Settings
                   </>
                 )}
