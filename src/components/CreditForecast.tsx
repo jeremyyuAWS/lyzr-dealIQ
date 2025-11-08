@@ -457,13 +457,6 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                 ))}
 
                 <svg className="absolute inset-0 w-full h-full overflow-visible">
-                  <defs>
-                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#2563eb" />
-                      <stop offset="100%" stopColor="#93c5fd" />
-                    </linearGradient>
-                  </defs>
-
                   {historicalMonths > 0 && (
                     <polyline
                       points={chartData.slice(0, historicalMonths + 1).map((d, i) => {
@@ -473,14 +466,9 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                       }).join(' ')}
                       fill="none"
                       stroke="#2563eb"
-                      strokeWidth="4"
+                      strokeWidth="3"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      style={{
-                        strokeDasharray: '1000',
-                        strokeDashoffset: '1000',
-                        animation: 'drawLine 1.5s ease-out forwards'
-                      }}
                     />
                   )}
 
@@ -493,15 +481,10 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                     }).join(' ')}
                     fill="none"
                     stroke="#93c5fd"
-                    strokeWidth="4"
-                    strokeDasharray="12,8"
+                    strokeWidth="3"
+                    strokeDasharray="8,6"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    style={{
-                      strokeDasharray: '1000',
-                      strokeDashoffset: '1000',
-                      animation: 'drawLine 1.5s ease-out 0.3s forwards'
-                    }}
                   />
 
                   {chartData.map((d, i) => {
@@ -513,26 +496,11 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
                         <circle
                           cx={`${x}%`}
                           cy={`${y}%`}
-                          r="7"
+                          r="6"
                           fill={isHistorical ? '#2563eb' : '#93c5fd'}
                           stroke="white"
-                          strokeWidth="3"
-                          className="drop-shadow-md"
-                          style={{
-                            opacity: 0,
-                            animation: `fadeInDot 0.4s ease-out ${0.5 + i * 0.15}s forwards`
-                          }}
-                        />
-                        <circle
-                          cx={`${x}%`}
-                          cy={`${y}%`}
-                          r="12"
-                          fill={isHistorical ? '#2563eb' : '#93c5fd'}
-                          opacity="0.2"
-                          style={{
-                            opacity: 0,
-                            animation: `pulseDot 2s ease-in-out ${0.5 + i * 0.15}s infinite`
-                          }}
+                          strokeWidth="2"
+                          className="drop-shadow-sm"
                         />
                         <title>${d.cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</title>
                       </g>
