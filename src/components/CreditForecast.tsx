@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Calculator, TrendingUp, Calendar, Info, Sliders, PieChart, Zap } from 'lucide-react';
 import { DealSubmission } from '../types';
+import { creditPricing } from '../lib/creditPricing';
 
 interface CreditForecastProps {
   estimatedAgents: number;
@@ -84,7 +85,7 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
   const monthlyCredits = dailyCredits * workingDaysPerMonth;
   const annualCredits = monthlyCredits * 12;
 
-  const creditCost = 0.01;
+  const creditCost = creditPricing.getRate();
   const dailyCost = dailyCredits * creditCost;
   const monthlyCost = monthlyCredits * creditCost;
   const annualCost = annualCredits * creditCost;
@@ -266,28 +267,25 @@ export default function CreditForecast({ estimatedAgents, complexityLevel, dealD
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-5 border-2 border-gray-200">
-          <h4 className="font-semibold text-black mb-4">Credit Consumption</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-600 mb-2">Per {useCaseConfig.unit.slice(0, -1)}</p>
-              <p className="text-3xl font-bold text-black">{creditsPerTransaction.toLocaleString()}</p>
-              <p className="text-xs text-gray-500 mt-2">credits</p>
+        <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border-2 border-gray-300">
+          <h4 className="font-bold text-black mb-5 text-lg">Estimated Credits & Cost</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="p-5 bg-gray-50 rounded-xl border border-gray-200">
+              <p className="text-xs text-gray-600 mb-3 uppercase tracking-wide">Per {useCaseConfig.unit.slice(0, -1)}</p>
+              <p className="text-4xl font-bold text-black mb-1">{creditsPerTransaction.toLocaleString()} <span className="text-xl text-gray-500">credits</span></p>
+              <p className="text-sm text-gray-600 mt-1">Base calculation per transaction</p>
             </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-xs text-blue-700 mb-2">Daily</p>
-              <p className="text-3xl font-bold text-blue-900">{dailyCredits.toLocaleString()}</p>
-              <p className="text-xs text-blue-600 mt-2">{volumePerDay} {useCaseConfig.unit}</p>
+
+            <div className="p-5 bg-blue-50 rounded-xl border border-blue-200">
+              <p className="text-xs text-blue-700 mb-3 uppercase tracking-wide font-semibold">Monthly Credits</p>
+              <p className="text-4xl font-bold text-black mb-1">{monthlyCredits.toLocaleString()} <span className="text-xl text-gray-500">credits</span></p>
+              <p className="text-sm text-blue-700 mt-1">Based on {volumePerDay} {useCaseConfig.unit}/day × {workingDaysPerMonth} days</p>
             </div>
-            <div className="text-center p-4 bg-blue-100 rounded-lg">
-              <p className="text-xs text-blue-700 mb-2">Monthly</p>
-              <p className="text-3xl font-bold text-blue-900">{monthlyCredits.toLocaleString()}</p>
-              <p className="text-xs text-blue-600 mt-2">{workingDaysPerMonth} days</p>
-            </div>
-            <div className="text-center p-4 bg-blue-200 rounded-lg">
-              <p className="text-xs text-blue-800 mb-2">Annual</p>
-              <p className="text-3xl font-bold text-blue-950">{annualCredits.toLocaleString()}</p>
-              <p className="text-xs text-blue-700 mt-2">12 months</p>
+
+            <div className="p-5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl border-2 border-blue-400 shadow-md">
+              <p className="text-xs text-blue-900 mb-3 uppercase tracking-wide font-bold">Monthly Cost</p>
+              <p className="text-5xl font-bold text-blue-950 mb-1">${creditPricing.formatCost(monthlyCredits)}</p>
+              <p className="text-sm text-blue-800 mt-2 font-medium">{monthlyCredits.toLocaleString()} × ${creditCost.toFixed(3)} per credit</p>
             </div>
           </div>
         </div>

@@ -4,7 +4,8 @@ import { storage } from '../lib/storage';
 import OpportunityAnalysis from './OpportunityAnalysis';
 import CreditForecast from './CreditForecast';
 import { generateOpportunityAnalysis, OpportunityAnalysisData } from '../utils/analysisGenerator';
-import { ChevronRight, TrendingUp, Clock, Building, Mail, Calendar, Sparkles, X } from 'lucide-react';
+import { creditPricing } from '../lib/creditPricing';
+import { ChevronRight, TrendingUp, Clock, Building, Mail, Calendar, Sparkles, X, Settings, DollarSign, Save } from 'lucide-react';
 
 const SYNTHETIC_DEALS: DealSubmission[] = [
   {
@@ -127,6 +128,10 @@ export default function AdminView() {
   const [generatingAnalysis, setGeneratingAnalysis] = useState(false);
   const [showSyntheticData, setShowSyntheticData] = useState(true);
   const [activeTab, setActiveTab] = useState<'analysis' | 'submission'>('analysis');
+  const [showSettings, setShowSettings] = useState(false);
+  const [creditRate, setCreditRate] = useState(creditPricing.getRate());
+  const [creditNotes, setCreditNotes] = useState(creditPricing.getPricing().notes || '');
+  const [settingsSaved, setSettingsSaved] = useState(false);
 
   useEffect(() => {
     fetchDeals();
@@ -135,14 +140,7 @@ export default function AdminView() {
   const fetchDeals = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('deal_submissions')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const realDeals = data || [];
+      const realDeals = await storage.getAllSubmissions();
       const allDeals = showSyntheticData ? [...SYNTHETIC_DEALS, ...realDeals] : realDeals;
       setDeals(allDeals);
     } catch (error) {
@@ -173,6 +171,12 @@ export default function AdminView() {
   const handleCloseDeal = () => {
     setSelectedDeal(null);
     setAnalysis(null);
+  };
+
+  const handleSaveSettings = () => {
+    creditPricing.setRate(creditRate, creditNotes);
+    setSettingsSaved(true);
+    setTimeout(() => setSettingsSaved(false), 3000);
   };
 
   const getDealStageColor = (stage?: string) => {
@@ -514,17 +518,129 @@ export default function AdminView() {
             <h2 className="text-3xl font-bold text-black mb-2">Deal Pipeline</h2>
             <p className="text-gray-600">Review and analyze submitted opportunities</p>
           </div>
-          <button
-            onClick={() => setShowSyntheticData(!showSyntheticData)}
-            className={`px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all ${
-              showSyntheticData
-                ? 'border-black bg-black text-white'
-                : 'border-gray-300 bg-white text-black hover:border-gray-400'
-            }`}
-          >
-            {showSyntheticData ? 'Hide' : 'Show'} Demo Data
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-gray-300 bg-white text-black hover:border-gray-400 font-medium text-sm transition-all"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </button>
+            <button
+              onClick={() => setShowSyntheticData(!showSyntheticData)}
+              className={`px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all ${
+                showSyntheticData
+                  ? 'border-black bg-black text-white'
+                  : 'border-gray-300 bg-white text-black hover:border-gray-400'
+              }`}
+            >
+              {showSyntheticData ? 'Hide' : 'Show'} Demo Data
+            </button>
+          </div>
         </div>
+
+        {showSettings && (
+          <div className="bg-white border-2 border-blue-300 rounded-2xl p-6 mb-6 shadow-lg">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-6 w-6 stroke-blue-700" />
+                <div>
+                  <h3 className="text-xl font-bold text-black">Credit Pricing Configuration</h3>
+                  <p className="text-sm text-gray-600">Set custom credit rates for this account</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 stroke-gray-600" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  Credit Rate (USD per credit)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">$</span>
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    value={creditRate}
+                    onChange={(e) => setCreditRate(parseFloat(e.target.value) || 0)}
+                    className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-bold"
+                    placeholder="0.01"
+                  />
+                </div>
+                <div className="mt-3 bg-blue-50 rounded-lg p-3">
+                  <p className="text-xs text-blue-800 mb-2"><strong>Common Pricing Tiers:</strong></p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setCreditRate(0.015)}
+                      className="px-2 py-1.5 bg-white hover:bg-blue-100 rounded text-xs font-medium border border-blue-200 transition-colors"
+                    >
+                      Standard: $0.015
+                    </button>
+                    <button
+                      onClick={() => setCreditRate(0.01)}
+                      className="px-2 py-1.5 bg-white hover:bg-blue-100 rounded text-xs font-medium border border-blue-200 transition-colors"
+                    >
+                      Enterprise: $0.01
+                    </button>
+                    <button
+                      onClick={() => setCreditRate(0.007)}
+                      className="px-2 py-1.5 bg-white hover:bg-blue-100 rounded text-xs font-medium border border-blue-200 transition-colors"
+                    >
+                      Volume: $0.007
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">
+                  Account Notes
+                </label>
+                <textarea
+                  value={creditNotes}
+                  onChange={(e) => setCreditNotes(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={4}
+                  placeholder="e.g., Enterprise tier customer, annual contract discount applied..."
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between pt-6 border-t border-gray-200">
+              <div className="text-sm text-gray-600">
+                <p><strong>Example:</strong> 1,000 credits at ${creditRate.toFixed(3)}/credit = <span className="font-bold text-black">${(1000 * creditRate).toFixed(2)}</span></p>
+              </div>
+              <button
+                onClick={handleSaveSettings}
+                disabled={settingsSaved}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                  settingsSaved
+                    ? 'bg-green-600 text-white'
+                    : 'bg-black text-white hover:bg-gray-800'
+                }`}
+              >
+                {settingsSaved ? (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Saved!
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Settings
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
         {deals.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
